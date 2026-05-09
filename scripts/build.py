@@ -67,7 +67,7 @@ def head_html(title, description, canonical_path, og_image=None):
 <meta property="og:site_name" content="{BIZ['name']}">
 
 <!-- 검색엔진 사이트확인 (네이버/구글 등록 시 채워넣음) -->
-<meta name="naver-site-verification" content="">
+<meta name="naver-site-verification" content="<meta name="naver-site-verification" content="8edd49471f1891161914188e9e2ebba9e81503f0" />">
 <meta name="google-site-verification" content="">
 
 <link rel="canonical" href="{canonical}">
