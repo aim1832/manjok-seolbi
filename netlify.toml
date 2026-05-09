@@ -1,0 +1,27 @@
+# ===========================================
+# Netlify 자동 배포 설정 파일
+# ===========================================
+# GitHub에 push하면 Netlify가 이 파일을 읽고 자동으로 빌드·배포함
+
+[build]
+  # 빌드 시 실행할 명령어 (Python으로 페이지 자동 생성)
+  command = "python3 scripts/build.py"
+  # 배포할 폴더 (생성된 정적 파일 위치)
+  publish = "dist"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# ===== HTTP 헤더 (보안 + SEO) =====
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# ===== 404 페이지 (선택사항) =====
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404

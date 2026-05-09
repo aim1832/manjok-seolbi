@@ -1,0 +1,119 @@
+{
+  "business": {
+    "name": "만족설비",
+    "phone": "010-6500-8715",
+    "phone_display": "010-6500-8715",
+    "phone_tel": "01065008715",
+    "description": "김해·창원 전지역 24시간 출장 가능한 배관설비 전문업체. 하수구 막힘, 수전 교체, 변기 교체·수리, 세면대 교체·수리, 욕조 배수구 교체까지 신속·정확·합리적 가격으로 시공합니다.",
+    "tagline": "김해·창원 배관설비 No.1 — 만족설비",
+    "service_hours": "연중무휴 24시간 상담"
+  },
+  "services": [
+    {
+      "slug": "drain-clog",
+      "name": "하수구 막힘",
+      "title_keywords": ["하수구 막힘", "하수구 뚫기", "싱크대 막힘", "주방 하수구"],
+      "description": "주방·욕실·베란다 하수구 막힘을 고압세척 및 전문 장비로 신속하게 해결합니다.",
+      "icon": "🔧"
+    },
+    {
+      "slug": "faucet-replace",
+      "name": "수전 교체",
+      "title_keywords": ["수전 교체", "주방 수전", "욕실 수전", "샤워기 교체"],
+      "description": "주방·욕실 노후 수전을 새 제품으로 깔끔하게 교체. 자재비 + 시공비 합리적 견적.",
+      "icon": "🚿"
+    },
+    {
+      "slug": "toilet-service",
+      "name": "변기 교체·수리",
+      "title_keywords": ["변기 교체", "변기 수리", "양변기 교체", "변기 막힘"],
+      "description": "변기 교체부터 부속(필밸브, 플러시밸브, 좌대) 교체, 누수 수리까지 원스톱 처리.",
+      "icon": "🚽"
+    },
+    {
+      "slug": "sink-service",
+      "name": "세면대 교체·수리",
+      "title_keywords": ["세면대 교체", "세면대 수리", "세면대 누수", "세면기 교체"],
+      "description": "세면대 본체 교체, 배수관 누수 수리, 트랩 교체 등 욕실 세면대 관련 모든 작업.",
+      "icon": "🛁"
+    },
+    {
+      "slug": "bathtub-drain",
+      "name": "욕조 배수구 교체",
+      "title_keywords": ["욕조 배수구", "욕조 배수구 교체", "욕조 누수", "욕조 트랩"],
+      "description": "욕조 배수구 부속 노후·누수 시 교체 작업. 방수처리까지 깔끔하게 마감합니다.",
+      "icon": "🛀"
+    }
+  ],
+  "regions": {
+    "gimhae": {
+      "name": "김해시",
+      "districts": [
+        {"slug": "naeoe", "name": "내외동", "tier": 1},
+        {"slug": "bukbu", "name": "북부동", "tier": 1},
+        {"slug": "samgye", "name": "삼계동", "tier": 1},
+        {"slug": "oedong", "name": "외동", "tier": 1},
+        {"slug": "buwon", "name": "부원동", "tier": 1},
+        {"slug": "dongsang", "name": "동상동", "tier": 1},
+        {"slug": "hoehyeon", "name": "회현동", "tier": 1},
+        {"slug": "hwalcheon", "name": "활천동", "tier": 1},
+        {"slug": "saman", "name": "삼안동", "tier": 1},
+        {"slug": "buram", "name": "불암동", "tier": 1},
+        {"slug": "chilsan-seobu", "name": "칠산서부동", "tier": 1},
+        {"slug": "jangyu1", "name": "장유1동", "tier": 1},
+        {"slug": "jangyu2", "name": "장유2동", "tier": 1},
+        {"slug": "jangyu3", "name": "장유3동", "tier": 1},
+        {"slug": "yulha", "name": "율하동", "tier": 1},
+        {"slug": "mugye", "name": "무계동", "tier": 1},
+        {"slug": "jinyeong", "name": "진영읍", "tier": 2},
+        {"slug": "jinrye", "name": "진례면", "tier": 2},
+        {"slug": "hanrim", "name": "한림면", "tier": 2},
+        {"slug": "saengrim", "name": "생림면", "tier": 2},
+        {"slug": "sangdong", "name": "상동면", "tier": 2},
+        {"slug": "daedong", "name": "대동면", "tier": 2},
+        {"slug": "juchon", "name": "주촌면", "tier": 2}
+      ]
+    },
+    "changwon": {
+      "name": "창원시",
+      "districts": [
+        {"slug": "uichang", "name": "의창동", "gu": "의창구", "tier": 1},
+        {"slug": "palryong", "name": "팔룡동", "gu": "의창구", "tier": 1},
+        {"slug": "myeonggok", "name": "명곡동", "gu": "의창구", "tier": 1},
+        {"slug": "bongrim", "name": "봉림동", "gu": "의창구", "tier": 1},
+        {"slug": "yongji", "name": "용지동", "gu": "성산구", "tier": 1},
+        {"slug": "jungang-cw", "name": "중앙동", "gu": "성산구", "tier": 1},
+        {"slug": "sangnam", "name": "상남동", "gu": "성산구", "tier": 1},
+        {"slug": "sapa", "name": "사파동", "gu": "성산구", "tier": 1},
+        {"slug": "gaeumjeong", "name": "가음정동", "gu": "성산구", "tier": 1},
+        {"slug": "bansong", "name": "반송동", "gu": "성산구", "tier": 1},
+        {"slug": "ungnam", "name": "웅남동", "gu": "성산구", "tier": 1},
+        {"slug": "daebang", "name": "대방동", "gu": "성산구", "tier": 1},
+        {"slug": "hoewon", "name": "회원동", "gu": "마산회원구", "tier": 1},
+        {"slug": "yangdeok", "name": "양덕동", "gu": "마산회원구", "tier": 1},
+        {"slug": "habseong", "name": "합성동", "gu": "마산회원구", "tier": 1},
+        {"slug": "seokjeon", "name": "석전동", "gu": "마산회원구", "tier": 1},
+        {"slug": "naeseo", "name": "내서읍", "gu": "마산회원구", "tier": 2},
+        {"slug": "habpo", "name": "합포동", "gu": "마산합포구", "tier": 1},
+        {"slug": "sanho", "name": "산호동", "gu": "마산합포구", "tier": 1},
+        {"slug": "wolyeong", "name": "월영동", "gu": "마산합포구", "tier": 1},
+        {"slug": "munhwa", "name": "문화동", "gu": "마산합포구", "tier": 1},
+        {"slug": "hyeondong", "name": "현동", "gu": "마산합포구", "tier": 1},
+        {"slug": "chungmu", "name": "충무동", "gu": "진해구", "tier": 1},
+        {"slug": "yeojwa", "name": "여좌동", "gu": "진해구", "tier": 1},
+        {"slug": "gyeonghwa", "name": "경화동", "gu": "진해구", "tier": 1},
+        {"slug": "seokdong", "name": "석동", "gu": "진해구", "tier": 1},
+        {"slug": "idong", "name": "이동", "gu": "진해구", "tier": 1},
+        {"slug": "jaeun", "name": "자은동", "gu": "진해구", "tier": 1},
+        {"slug": "deoksan", "name": "덕산동", "gu": "진해구", "tier": 1},
+        {"slug": "pungho", "name": "풍호동", "gu": "진해구", "tier": 1},
+        {"slug": "ungcheon", "name": "웅천동", "gu": "진해구", "tier": 1},
+        {"slug": "ungdong", "name": "웅동", "gu": "진해구", "tier": 2}
+      ]
+    }
+  },
+  "site": {
+    "url": "https://manjok-seolbi.netlify.app",
+    "default_og_image": "/assets/img/og-default.jpg"
+  }
+}
