@@ -23,6 +23,19 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+# Pillow는 이미지 자동 압축용 (없으면 압축 없이 진행)
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("⚠️  Pillow 미설치 — 이미지 압축 없이 진행 (pip install Pillow 권장)")
+
+# ===== 이미지 자동 압축 설정 =====
+IMG_MAX_WIDTH = 1600        # 최대 가로 픽셀 (이보다 크면 자동으로 줄임)
+IMG_QUALITY = 82            # JPEG 품질 (0~100, 80~85가 균형 좋음)
+IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
 # ===== 경로 설정 =====
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "data" / "config.json"
@@ -410,12 +423,101 @@ def write_file(path, content):
         f.write(content)
 
 
+def compress_image(src_path, dest_path):
+    """
+    이미지 자동 압축 + 크기 조정
+    - 가로 1600px 초과 시 자동 축소
+    - JPEG 품질 82로 압축
+    - 평균 70~90% 용량 감소
+    """
+    if not PIL_AVAILABLE:
+        # Pillow 없으면 그냥 복사
+        shutil.copy2(src_path, dest_path)
+        return
+
+    try:
+        img = Image.open(src_path)
+
+        # EXIF 회전 정보 반영 (휴대폰으로 찍은 사진이 옆으로 누운 문제 해결)
+        try:
+            from PIL import ImageOps
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
+        # RGBA → RGB 변환 (JPEG 저장을 위해)
+        if img.mode in ("RGBA", "P"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "RGBA":
+                background.paste(img, mask=img.split()[3])
+            else:
+                background.paste(img)
+            img = background
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # 가로 폭이 1600 초과면 비율 유지하며 축소
+        if img.width > IMG_MAX_WIDTH:
+            ratio = IMG_MAX_WIDTH / img.width
+            new_height = int(img.height * ratio)
+            img = img.resize((IMG_MAX_WIDTH, new_height), Image.LANCZOS)
+
+        # JPEG로 저장 (확장자가 PNG여도 JPEG로 변환됨 — 용량 효율)
+        dest_path = Path(dest_path)
+        if dest_path.suffix.lower() == ".png":
+            dest_path = dest_path.with_suffix(".jpg")
+
+        img.save(dest_path, "JPEG", quality=IMG_QUALITY, optimize=True, progressive=True)
+
+    except Exception as e:
+        # 압축 실패 시 원본 그대로 복사 (사이트가 깨지지 않도록)
+        print(f"  ⚠️  이미지 압축 실패, 원본 복사: {src_path.name} ({e})")
+        shutil.copy2(src_path, dest_path)
+
+
 def copy_assets():
+    """assets 폴더 복사하면서 이미지는 자동 압축"""
     dest = DIST_DIR / "assets"
     if dest.exists():
         shutil.rmtree(dest)
-    shutil.copytree(ASSETS_SRC, dest)
-    print("  ✓ assets/ 복사 완료")
+    dest.mkdir(parents=True)
+
+    img_count = 0
+    img_total_before = 0
+    img_total_after = 0
+    other_count = 0
+
+    for src_file in ASSETS_SRC.rglob("*"):
+        if not src_file.is_file():
+            continue
+
+        rel_path = src_file.relative_to(ASSETS_SRC)
+        dest_file = dest / rel_path
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # 이미지면 압축, 아니면 그냥 복사
+        if src_file.suffix.lower() in IMG_EXTENSIONS:
+            size_before = src_file.stat().st_size
+            img_total_before += size_before
+            compress_image(src_file, dest_file)
+            # PNG가 JPG로 바뀌었을 수도 있으니 다시 찾기
+            actual_dest = dest_file
+            if not actual_dest.exists() and dest_file.suffix.lower() == ".png":
+                actual_dest = dest_file.with_suffix(".jpg")
+            if actual_dest.exists():
+                img_total_after += actual_dest.stat().st_size
+            img_count += 1
+        else:
+            shutil.copy2(src_file, dest_file)
+            other_count += 1
+
+    if img_count > 0 and img_total_before > 0:
+        saved_pct = 100 * (1 - img_total_after / img_total_before)
+        before_mb = img_total_before / (1024 * 1024)
+        after_mb = img_total_after / (1024 * 1024)
+        print(f"  ✓ assets/ 복사 완료 (이미지 {img_count}장: {before_mb:.1f}MB → {after_mb:.1f}MB, {saved_pct:.0f}% 절감)")
+    else:
+        print(f"  ✓ assets/ 복사 완료 (이미지 {img_count}장, 기타 {other_count}개)")
 
 
 # ============================================================
