@@ -115,7 +115,7 @@ def header_html():
 </div>
 <header class="header">
   <div class="header-inner">
-    <a href="/" class="logo">만<span>족</span>설비</a>
+    <a href="/" class="logo">만족설비</a>
     <div class="header-actions">
       <a href="{BIZ['kakao_url']}" target="_blank" class="header-kakao">💬 카톡상담</a>
       <a href="tel:{BIZ['phone_tel']}" class="header-phone">📞 {BIZ['phone_display']}</a>
@@ -172,6 +172,67 @@ def cta_box_html(text="작업 상담은 전화 한 통이면 끝!"):
 """
 
 
+def service_icon_svg(slug):
+    """서비스별 커스텀 SVG 아이콘"""
+    primary = "#2d4a2b"
+    accent = "#8b6f47"
+
+    if slug == "drain-clog":
+        # 하수구 막힘 — P트랩 배관
+        return f'''<svg width="48" height="48" viewBox="0 0 32 32" fill="none" stroke="{primary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M3 10 L13 10 L13 20 L19 20 L19 10 L29 10" />
+  <rect x="2" y="8" width="3" height="4" fill="{primary}" stroke="none"/>
+  <rect x="27" y="8" width="3" height="4" fill="{primary}" stroke="none"/>
+  <rect x="11" y="18" width="2" height="4" fill="{primary}" stroke="none"/>
+  <rect x="19" y="8" width="2" height="4" fill="{primary}" stroke="none"/>
+</svg>'''
+
+    if slug == "faucet-replace":
+        # 수전 교체 — Tabler tool 아이콘 흉내
+        return f'''<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{accent}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/>
+</svg>'''
+
+    if slug == "toilet-service":
+        # 변기 교체 및 수리
+        return f'''<svg width="48" height="48" viewBox="0 0 32 32" fill="none" stroke="{primary}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M9 5 L23 5 L23 12 L9 12 Z" />
+  <path d="M11 12 L11 17" />
+  <path d="M21 12 L21 17" />
+  <ellipse cx="16" cy="20" rx="9" ry="4" />
+  <path d="M9 22 L9 26 Q9 28 11 28 L21 28 Q23 28 23 26 L23 22" />
+</svg>'''
+
+    if slug == "sink-service":
+        # 세면대 교체 및 수리
+        return f'''<svg width="48" height="48" viewBox="0 0 32 32" fill="none" stroke="{accent}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M16 4 L16 8" />
+  <path d="M14 8 L18 8 L18 11 L14 11 Z" fill="{accent}" stroke="{accent}"/>
+  <path d="M16 11 L16 15" />
+  <path d="M5 16 L27 16 L25 22 Q25 24 23 24 L9 24 Q7 24 7 22 Z" />
+  <line x1="14" y1="20" x2="18" y2="20" stroke-width="2"/>
+  <path d="M14 24 L14 27" />
+  <path d="M18 24 L18 27" />
+</svg>'''
+
+    if slug == "bathtub-drain":
+        # 욕조 배수구 교체
+        return f'''<svg width="48" height="48" viewBox="0 0 32 32" fill="none" stroke="{primary}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M4 12 L4 14 L4 20 Q4 24 8 24 L24 24 Q28 24 28 20 L28 14 L28 12 Z" />
+  <path d="M4 16 L28 16" />
+  <circle cx="9" cy="20" r="1.5" fill="{primary}" stroke="none"/>
+  <path d="M14 8 Q14 6 16 6 Q18 6 18 8 L18 11" />
+  <line x1="14" y1="11" x2="20" y2="11" stroke-width="2"/>
+  <path d="M22 24 L22 27" />
+  <path d="M10 24 L10 27" />
+</svg>'''
+
+    # 기본 아이콘 (없는 경우)
+    return f'''<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{primary}" stroke-width="2" aria-hidden="true">
+  <circle cx="12" cy="12" r="9"/>
+</svg>'''
+
+
 # ============================================================
 # 1. 메인 페이지 생성
 # ============================================================
@@ -184,8 +245,9 @@ def build_index():
     # 히어로
     html += f"""
 <section class="hero">
-  <h1>김해·창원 배관설비 전문<br>{BIZ['name']}</h1>
-  <p class="subtitle">하수구 막힘 · 수전 교체 · 변기/세면대 수리 · 욕조 배수구<br>김해·창원 전지역 24시간 출장</p>
+  <div class="hero-badge">✓ 꼼꼼한 시공 · 정직한 견적</div>
+  <h1>우리 동네 믿을 수 있는<br>배관 전문가</h1>
+  <p class="subtitle">— {BIZ['name']} —</p>
   <div class="cta-group">
     <a href="tel:{BIZ['phone_tel']}" class="btn btn-primary">📞 {BIZ['phone_display']}</a>
     <a href="{BIZ['kakao_url']}" target="_blank" class="btn btn-kakao">💬 카톡 상담</a>
@@ -193,17 +255,35 @@ def build_index():
   </div>
   <p class="hero-tip">💡 카톡으로 사진 보내주시면 빠른 견적 안내!</p>
 </section>
+
+<section class="trust-stats">
+  <div class="trust-stats-inner">
+    <div class="trust-item">
+      <div class="trust-num">10<span>년+</span></div>
+      <div class="trust-label">운영 경력</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-num brown">5,000<span>건+</span></div>
+      <div class="trust-label">누적 시공</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-num warning">미해결시</div>
+      <div class="trust-label warning">0원 보장</div>
+    </div>
+  </div>
+</section>
 """
 
     # 서비스
     html += '<section id="services" class="container">'
     html += '<h2 class="section-title">주요 서비스</h2>'
-    html += '<p class="section-subtitle">김해·창원 어디든 빠르게 출동합니다</p>'
+    html += '<p class="section-subtitle">우리 집 같은 마음으로 시공합니다</p>'
     html += '<div class="services-grid">'
     for s in SERVICES:
+        icon_svg = service_icon_svg(s['slug'])
         html += f"""
   <div class="service-card">
-    <div class="service-icon">{s['icon']}</div>
+    <div class="service-icon">{icon_svg}</div>
     <h3>{s['name']}</h3>
     <p>{s['description']}</p>
   </div>"""
