@@ -110,11 +110,16 @@ def header_html():
     return f"""
 <div class="top-bar">
   📞 24시간 출장 상담 — <a href="tel:{BIZ['phone_tel']}" style="color:#fff;text-decoration:underline;">{BIZ['phone_display']}</a>
+  &nbsp;|&nbsp;
+  <a href="{BIZ['kakao_url']}" target="_blank" style="color:#fff;text-decoration:underline;">💬 카톡 상담</a>
 </div>
 <header class="header">
   <div class="header-inner">
     <a href="/" class="logo">만<span>족</span>설비</a>
-    <a href="tel:{BIZ['phone_tel']}" class="header-phone">📞 {BIZ['phone_display']}</a>
+    <div class="header-actions">
+      <a href="{BIZ['kakao_url']}" target="_blank" class="header-kakao">💬 카톡상담</a>
+      <a href="tel:{BIZ['phone_tel']}" class="header-phone">📞 {BIZ['phone_display']}</a>
+    </div>
   </div>
 </header>
 """
@@ -122,7 +127,16 @@ def header_html():
 
 def floating_call_html():
     return f"""
-<a href="tel:{BIZ['phone_tel']}" class="floating-call">📞 즉시 상담</a>
+<div class="floating-buttons">
+  <a href="{BIZ['kakao_url']}" target="_blank" class="floating-kakao">
+    <span class="floating-icon">💬</span>
+    <span class="floating-text">카톡상담</span>
+  </a>
+  <a href="tel:{BIZ['phone_tel']}" class="floating-call">
+    <span class="floating-icon">📞</span>
+    <span class="floating-text">즉시통화</span>
+  </a>
+</div>
 """
 
 
@@ -149,7 +163,11 @@ def cta_box_html(text="작업 상담은 전화 한 통이면 끝!"):
 <div class="cta-box">
   <h3>지금 막힘·누수로 곤란하신가요?</h3>
   <p>{text} 김해·창원 전지역 빠른 출장 가능합니다.</p>
-  <a href="tel:{BIZ['phone_tel']}" class="btn btn-primary">📞 {BIZ['phone_display']}</a>
+  <div class="cta-buttons">
+    <a href="tel:{BIZ['phone_tel']}" class="btn btn-cta-call">📞 {BIZ['phone_display']}</a>
+    <a href="{BIZ['kakao_url']}" target="_blank" class="btn btn-cta-kakao">💬 카톡으로 상담받기</a>
+  </div>
+  <p class="cta-tip">💡 카톡으로 작업 부위 사진 보내주시면 정확한 견적을 빠르게 안내드립니다!</p>
 </div>
 """
 
@@ -170,8 +188,10 @@ def build_index():
   <p class="subtitle">하수구 막힘 · 수전 교체 · 변기/세면대 수리 · 욕조 배수구<br>김해·창원 전지역 24시간 출장</p>
   <div class="cta-group">
     <a href="tel:{BIZ['phone_tel']}" class="btn btn-primary">📞 {BIZ['phone_display']}</a>
+    <a href="{BIZ['kakao_url']}" target="_blank" class="btn btn-kakao">💬 카톡 상담</a>
     <a href="#services" class="btn btn-secondary">서비스 보기</a>
   </div>
+  <p class="hero-tip">💡 카톡으로 사진 보내주시면 빠른 견적 안내!</p>
 </section>
 """
 
