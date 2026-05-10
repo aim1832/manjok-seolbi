@@ -3,7 +3,7 @@
    부드러운 한글 폰트 + 손글씨 포인트
    ======================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gaegu:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -36,7 +36,7 @@ body {
 
 /* 손글씨 포인트 폰트 */
 .handwriting {
-  font-family: 'Gaegu', 'Gowun Dodum', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
 }
 
 a { color: var(--primary); text-decoration: none; }
@@ -74,7 +74,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .logo {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 28px;
   font-weight: 700;
   color: var(--primary);
@@ -150,7 +150,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .hero p.subtitle {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 20px;
   color: var(--text-muted);
   margin-bottom: 28px;
@@ -228,7 +228,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .trust-num {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 36px;
   font-weight: 700;
   color: var(--primary);
@@ -268,7 +268,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .section-subtitle {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   text-align: center;
   color: var(--accent);
   margin-bottom: 36px;
@@ -340,7 +340,7 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 24px;
   font-weight: 700;
   margin: 0 auto 14px;
@@ -509,7 +509,7 @@ img { max-width: 100%; height: auto; display: block; }
 .post-content figure { margin: 24px 0; text-align: center; }
 
 .post-content figcaption {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 15px;
   color: var(--text-muted);
   margin-top: 8px;
@@ -536,7 +536,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .cta-box > p {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 16px;
   margin-bottom: 22px;
   color: #d4c590;
@@ -573,7 +573,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .cta-tip {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   font-size: 14px;
   margin-top: 8px;
   margin-bottom: 0 !important;
@@ -623,7 +623,7 @@ img { max-width: 100%; height: auto; display: block; }
 .footer-info { margin-bottom: 16px; }
 
 .footer-info strong {
-  font-family: 'Gaegu', sans-serif;
+  font-family: 'Gowun Dodum', sans-serif;
   color: #fff;
   font-size: 22px;
   display: block;
