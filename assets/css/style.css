@@ -13,6 +13,9 @@
   --primary: #0066cc;
   --primary-dark: #004a99;
   --accent: #ff6b35;
+  --kakao: #FEE500;
+  --kakao-text: #3A1D1D;
+  --kakao-hover: #FDD835;
   --text: #222;
   --text-light: #555;
   --bg: #fff;
@@ -90,6 +93,13 @@ img {
   color: var(--accent);
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .header-phone {
   background: var(--accent);
   color: #fff;
@@ -103,6 +113,22 @@ img {
 .header-phone:hover {
   background: #e85a26;
   color: #fff;
+  text-decoration: none;
+}
+
+.header-kakao {
+  background: var(--kakao);
+  color: var(--kakao-text);
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 16px;
+  display: inline-block;
+}
+
+.header-kakao:hover {
+  background: var(--kakao-hover);
+  color: var(--kakao-text);
   text-decoration: none;
 }
 
@@ -166,6 +192,23 @@ img {
 
 .btn-secondary:hover {
   color: var(--primary-dark);
+}
+
+.btn-kakao {
+  background: var(--kakao);
+  color: var(--kakao-text);
+  box-shadow: 0 4px 14px rgba(254,229,0,0.5);
+}
+
+.btn-kakao:hover {
+  background: var(--kakao-hover);
+  color: var(--kakao-text);
+}
+
+.hero-tip {
+  margin-top: 18px;
+  font-size: 14px;
+  opacity: 0.95;
 }
 
 /* ===== 컨테이너 ===== */
@@ -461,33 +504,98 @@ img {
   opacity: 0.95;
 }
 
-.cta-box .btn {
-  background: #fff;
-  color: var(--primary);
+.cta-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 
-/* ===== 플로팅 전화 버튼 ===== */
-.floating-call {
+.btn-cta-call {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.btn-cta-call:hover {
+  background: #f0f4f8;
+  color: var(--primary-dark);
+}
+
+.btn-cta-kakao {
+  background: var(--kakao);
+  color: var(--kakao-text);
+  font-weight: 800;
+}
+
+.btn-cta-kakao:hover {
+  background: var(--kakao-hover);
+  color: var(--kakao-text);
+}
+
+.cta-tip {
+  font-size: 14px;
+  margin-top: 8px;
+  margin-bottom: 0 !important;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* ===== 플로팅 버튼 그룹 (우측 하단 떠다님) ===== */
+.floating-buttons {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: var(--accent);
-  color: #fff;
-  padding: 16px 22px;
-  border-radius: 50px;
-  font-weight: 700;
-  font-size: 16px;
-  box-shadow: 0 6px 20px rgba(255,107,53,0.5);
   z-index: 99;
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.floating-kakao,
+.floating-call {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.floating-kakao {
+  background: var(--kakao);
+  color: var(--kakao-text);
+}
+
+.floating-kakao:hover {
+  background: var(--kakao-hover);
+  color: var(--kakao-text);
+  text-decoration: none;
+  transform: scale(1.05);
+}
+
+.floating-call {
+  background: var(--accent);
+  color: #fff;
 }
 
 .floating-call:hover {
+  background: #e85a26;
   color: #fff;
   text-decoration: none;
   transform: scale(1.05);
+}
+
+.floating-icon {
+  font-size: 18px;
+}
+
+.floating-text {
+  font-size: 15px;
 }
 
 /* ===== 푸터 ===== */
@@ -570,6 +678,29 @@ img {
   .container { padding: 36px 16px; }
   .header-inner { padding: 12px 16px; }
   .logo { font-size: 18px; }
-  .header-phone { font-size: 14px; padding: 8px 14px; }
-  .floating-call { padding: 14px 18px; font-size: 14px; bottom: 16px; right: 16px; }
+  .header-phone { font-size: 13px; padding: 8px 12px; }
+  .header-kakao { font-size: 13px; padding: 8px 12px; }
+  .header-actions { gap: 6px; }
+
+  /* 모바일에선 플로팅 버튼 작게 */
+  .floating-kakao,
+  .floating-call {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .floating-buttons {
+    bottom: 16px;
+    right: 16px;
+    gap: 8px;
+  }
+  .floating-text {
+    font-size: 13px;
+  }
+  .cta-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .cta-buttons .btn {
+    width: 100%;
+  }
 }
