@@ -48,7 +48,7 @@
   ],
   "regions": {
     "gimhae": {
-      "name": "김해시",
+      "name": "김해",
       "districts": [
         {"slug": "kwandong", "name": "관동동", "tier": 1},
         {"slug": "gusan", "name": "구산동", "tier": 1},
@@ -100,7 +100,7 @@
       ]
     },
     "changwon": {
-      "name": "창원시",
+      "name": "창원",
       "districts": [
         {"slug": "uichang", "name": "의창동", "gu": "의창구", "tier": 1},
         {"slug": "palryong", "name": "팔룡동", "gu": "의창구", "tier": 1},
