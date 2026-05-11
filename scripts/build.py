@@ -366,8 +366,253 @@ def build_index():
 # ============================================================
 # 2. 지역×서비스 페이지 자동 생성 (SEO 핵심!)
 # ============================================================
+# ============================================================
+# ⭐ 자동 연결 시스템 — 후기와 지역×서비스 페이지를 자동 연결
+# ============================================================
+
+# 인근 지역 매핑 (장유 근처는 같은 생활권으로 묶음)
+NEARBY_REGIONS = {
+    # 장유 생활권 (서부)
+    "jangyu": ["jangyu-dong", "yulha", "mugye", "naedeok", "daecheong", "bugok", "sammun", "suga", "yuha", "eungdal", "kwandong", "shinmun"],
+    "jangyu-dong": ["jangyu", "yulha", "mugye", "naedeok", "daecheong", "bugok", "sammun", "suga", "yuha", "eungdal", "kwandong", "shinmun"],
+    "yulha": ["jangyu", "jangyu-dong", "mugye", "daecheong", "bugok", "kwandong"],
+    "mugye": ["jangyu", "jangyu-dong", "yulha", "naedeok", "daecheong"],
+    "naedeok": ["jangyu", "jangyu-dong", "mugye", "daecheong", "bugok"],
+    "daecheong": ["jangyu", "jangyu-dong", "yulha", "mugye", "naedeok"],
+    "bugok": ["jangyu", "jangyu-dong", "yulha", "naedeok"],
+    "sammun": ["jangyu", "jangyu-dong", "suga", "yuha"],
+    "suga": ["jangyu", "jangyu-dong", "sammun", "yuha"],
+    "yuha": ["jangyu", "jangyu-dong", "sammun", "suga"],
+    "eungdal": ["jangyu", "jangyu-dong", "kwandong"],
+    "kwandong": ["jangyu", "jangyu-dong", "yulha", "eungdal", "shinmun"],
+    "shinmun": ["jangyu", "jangyu-dong", "kwandong"],
+
+    # 김해 도심 생활권
+    "naeoe": ["bukbu", "samgye", "dongsang", "seosang", "buwon"],
+    "bukbu": ["naeoe", "samgye", "samjeong"],
+    "samgye": ["naeoe", "bukbu", "samjeong", "sambang"],
+    "dongsang": ["seosang", "buwon", "bonghwang", "daeseong", "naeoe"],
+    "seosang": ["dongsang", "buwon", "bonghwang", "daeseong", "naeoe"],
+    "buwon": ["dongsang", "seosang", "bonghwang", "naeoe"],
+    "bonghwang": ["dongsang", "seosang", "buwon", "daeseong"],
+    "daeseong": ["dongsang", "seosang", "bonghwang"],
+    "saman": ["hwalcheon", "eobang", "andong"],
+    "hwalcheon": ["saman", "eobang", "andong"],
+    "eobang": ["hwalcheon", "saman", "andong"],
+    "andong": ["hwalcheon", "saman", "eobang", "jinae"],
+    "sambang": ["samgye", "samjeong"],
+    "samjeong": ["bukbu", "samgye", "sambang"],
+    "buram": ["chilsan-seobu", "hoehyeon"],
+    "chilsan-seobu": ["buram", "hoehyeon"],
+    "hoehyeon": ["buram", "chilsan-seobu", "naedong"],
+    "naedong": ["hoehyeon", "oedong"],
+    "oedong": ["naedong", "hoehyeon"],
+    "gusan": ["naeoe", "samgye"],
+    "jinae": ["andong", "saman"],
+
+    # 김해 외곽
+    "myeongbeop": ["jeonha", "hwamok"],
+    "jeonha": ["myeongbeop", "hwamok", "heungdong"],
+    "hwamok": ["myeongbeop", "jeonha", "heungdong"],
+    "heungdong": ["jeonha", "hwamok", "pungyu"],
+    "pungyu": ["heungdong"],
+    "guji": ["jinyeong"],
+
+    # 읍·면 단위
+    "jinyeong": ["jinrye", "hanrim", "guji"],
+    "jinrye": ["jinyeong", "hanrim"],
+    "hanrim": ["jinrye", "jinyeong", "saengrim"],
+    "saengrim": ["hanrim", "sangdong"],
+    "sangdong": ["saengrim", "daedong"],
+    "daedong": ["sangdong", "juchon"],
+    "juchon": ["daedong"],
+}
+
+
+def build_post_index(posts):
+    """후기들을 지역/서비스별로 인덱싱.
+
+    각 후기에서 어떤 지역(district slug)과 매칭되는지 자동 추출.
+    """
+    index = {
+        "by_district": {},  # district_slug -> [posts]
+        "by_district_service": {},  # (district_slug, service_slug) -> [posts]
+    }
+
+    # 모든 동 이름 → slug 매핑 만들기
+    name_to_slug = {}
+    for region_key, region_data in REGIONS.items():
+        for d in region_data["districts"]:
+            name_to_slug[d["name"]] = d["slug"]
+
+    for post in posts:
+        region_text = post.get("region", "")
+        service_slug = post.get("service_slug", "")
+
+        # 후기의 region 텍스트에서 동 이름 추출
+        matched_districts = set()
+        for name, slug in name_to_slug.items():
+            if name in region_text:
+                matched_districts.add(slug)
+
+        # 인덱스에 추가
+        for d_slug in matched_districts:
+            index["by_district"].setdefault(d_slug, []).append(post)
+            key = (d_slug, service_slug)
+            index["by_district_service"].setdefault(key, []).append(post)
+
+    return index
+
+
+def find_matching_posts(district, service, post_index):
+    """이 페이지에 표시할 후기들을 찾기.
+
+    반환:
+      exact: 정확히 이 지역+이 서비스 후기
+      same_region_other: 같은 지역의 다른 서비스 후기
+      nearby: 인근 지역의 같은 서비스 후기
+    """
+    d_slug = district["slug"]
+    s_slug = service["slug"]
+
+    exact = post_index["by_district_service"].get((d_slug, s_slug), [])
+
+    # 같은 지역, 다른 서비스
+    same_region_all = post_index["by_district"].get(d_slug, [])
+    same_region_other = [p for p in same_region_all if p.get("service_slug") != s_slug]
+
+    # 인근 지역, 같은 서비스
+    nearby = []
+    nearby_slugs = NEARBY_REGIONS.get(d_slug, [])
+    for nearby_slug in nearby_slugs:
+        nearby_posts = post_index["by_district_service"].get((nearby_slug, s_slug), [])
+        nearby.extend(nearby_posts)
+
+    # 중복 제거 (정확 매칭에 있는 건 다른 영역에서 제외)
+    exact_slugs = {p["slug"] for p in exact}
+    same_region_other = [p for p in same_region_other if p["slug"] not in exact_slugs]
+    nearby = [p for p in nearby if p["slug"] not in exact_slugs]
+
+    # 최신순 정렬 + 개수 제한
+    exact.sort(key=lambda p: p.get("date", ""), reverse=True)
+    same_region_other.sort(key=lambda p: p.get("date", ""), reverse=True)
+    nearby.sort(key=lambda p: p.get("date", ""), reverse=True)
+
+    return {
+        "exact": exact[:3],
+        "same_region_other": same_region_other[:2],
+        "nearby": nearby[:2],
+    }
+
+
+def render_exact_match_reviews(district, service, posts):
+    """정확히 매칭되는 후기 영역 — 본문도 풍부하게"""
+    if not posts:
+        return ""
+
+    # 사례 요약 문장 자동 생성 (보너스 기능)
+    main_post = posts[0]
+    summary_html = f"""
+  <h2>{district['name']} 지역 {service['name']} 실제 작업 사례</h2>
+  <p>만족설비는 <strong>{district['name']}</strong> 지역에서 다양한 {service['name']} 작업을 진행했습니다.
+  대표적으로 <strong>{main_post.get('region', '')}</strong>에서 작업한 사례가 있으며, 합리적 비용에 신속하게 시공해드렸습니다.
+  자세한 작업 과정과 사진은 아래 후기에서 확인하실 수 있어요.</p>
+"""
+
+    html = summary_html
+    html += f'<div class="reviews-grid" style="margin-top:20px;">'
+
+    for p in posts:
+        thumb = p.get("thumbnail", "")
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        date = p.get("date", "")
+        region = p.get("region", "")
+
+        html += f"""
+    <a href="/post/{p['slug']}/" class="review-card">
+      <div class="thumb" {thumb_style}></div>
+      <div class="body">
+        <span class="badge">{service['name']}</span>
+        <h4>{p['title']}</h4>
+        <p class="meta">📍 {region} · {date}</p>
+      </div>
+    </a>"""
+
+    html += "</div>"
+    return html
+
+
+def render_same_region_reviews(district, posts):
+    """같은 지역의 다른 서비스 후기"""
+    if not posts:
+        return ""
+
+    html = f"""
+  <h2>{district['name']} 지역의 다른 작업 후기</h2>
+  <p>만족설비는 <strong>{district['name']}</strong> 지역에서 다양한 배관설비 작업을 수행하고 있습니다.
+  하수구 막힘, 수전 교체, 변기·세면대 수리 등 어떤 작업이든 맡겨주세요.</p>
+"""
+    html += f'<div class="reviews-grid" style="margin-top:20px;">'
+
+    for p in posts:
+        thumb = p.get("thumbnail", "")
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        date = p.get("date", "")
+        region = p.get("region", "")
+        service_name = p.get("service_name", "")
+
+        html += f"""
+    <a href="/post/{p['slug']}/" class="review-card">
+      <div class="thumb" {thumb_style}></div>
+      <div class="body">
+        <span class="badge">{service_name}</span>
+        <h4>{p['title']}</h4>
+        <p class="meta">📍 {region} · {date}</p>
+      </div>
+    </a>"""
+
+    html += "</div>"
+    return html
+
+
+def render_nearby_reviews(district, service, posts):
+    """인근 지역의 같은 서비스 후기"""
+    if not posts:
+        return ""
+
+    html = f"""
+  <h2>인근 지역 {service['name']} 작업 후기</h2>
+  <p><strong>{district['name']}</strong> 인근 지역에서 진행한 {service['name']} 작업 사례입니다.
+  {district['name']}에서도 동일한 품질로 빠르게 출장 가능합니다.</p>
+"""
+    html += f'<div class="reviews-grid" style="margin-top:20px;">'
+
+    for p in posts:
+        thumb = p.get("thumbnail", "")
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        date = p.get("date", "")
+        region = p.get("region", "")
+
+        html += f"""
+    <a href="/post/{p['slug']}/" class="review-card">
+      <div class="thumb" {thumb_style}></div>
+      <div class="body">
+        <span class="badge">{service['name']}</span>
+        <h4>{p['title']}</h4>
+        <p class="meta">📍 {region} · {date}</p>
+      </div>
+    </a>"""
+
+    html += "</div>"
+    return html
+
+
 def build_region_service_pages():
     """예: /jangyu1-drain-clog/ → 장유1동 하수구 막힘 페이지"""
+    # 후기 데이터 미리 로드 + 매칭 인덱스 구축
+    all_posts = load_posts()
+    post_index = build_post_index(all_posts)
+
     count = 0
     for region_key, region_data in REGIONS.items():
         city_name = region_data["name"]
@@ -397,7 +642,24 @@ def build_region_service_pages():
   {city_name} {d['name']} 일대에서 {s['name']} 작업이 필요하신 고객님께 빠르고 정확한 시공으로 보답드리고 있습니다.</p>
 
   <p>{s['description']}</p>
+"""
 
+                # ⭐ 자동 연결 시스템 — 매칭되는 실제 작업 후기 표시
+                matched_posts = find_matching_posts(d, s, post_index)
+                if matched_posts["exact"]:
+                    html += render_exact_match_reviews(
+                        d, s, matched_posts["exact"]
+                    )
+                if matched_posts["same_region_other"]:
+                    html += render_same_region_reviews(
+                        d, matched_posts["same_region_other"]
+                    )
+                if matched_posts["nearby"]:
+                    html += render_nearby_reviews(
+                        d, s, matched_posts["nearby"]
+                    )
+
+                html += f"""
   <h2>{d['name']} {s['name']}, 이런 경우 연락주세요</h2>
   <ul>
 """
