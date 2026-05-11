@@ -373,19 +373,18 @@ def build_index():
 # 인근 지역 매핑 (장유 근처는 같은 생활권으로 묶음)
 NEARBY_REGIONS = {
     # 장유 생활권 (서부)
-    "jangyu": ["jangyu-dong", "yulha", "mugye", "naedeok", "daecheong", "bugok", "sammun", "suga", "yuha", "eungdal", "kwandong", "shinmun"],
-    "jangyu-dong": ["jangyu", "yulha", "mugye", "naedeok", "daecheong", "bugok", "sammun", "suga", "yuha", "eungdal", "kwandong", "shinmun"],
-    "yulha": ["jangyu", "jangyu-dong", "mugye", "daecheong", "bugok", "kwandong"],
-    "mugye": ["jangyu", "jangyu-dong", "yulha", "naedeok", "daecheong"],
-    "naedeok": ["jangyu", "jangyu-dong", "mugye", "daecheong", "bugok"],
-    "daecheong": ["jangyu", "jangyu-dong", "yulha", "mugye", "naedeok"],
-    "bugok": ["jangyu", "jangyu-dong", "yulha", "naedeok"],
-    "sammun": ["jangyu", "jangyu-dong", "suga", "yuha"],
-    "suga": ["jangyu", "jangyu-dong", "sammun", "yuha"],
-    "yuha": ["jangyu", "jangyu-dong", "sammun", "suga"],
-    "eungdal": ["jangyu", "jangyu-dong", "kwandong"],
-    "kwandong": ["jangyu", "jangyu-dong", "yulha", "eungdal", "shinmun"],
-    "shinmun": ["jangyu", "jangyu-dong", "kwandong"],
+    "jangyu": ["yulha", "mugye", "naedeok", "daecheong", "bugok", "sammun", "suga", "yuha", "eungdal", "kwandong", "shinmun"],
+    "yulha": ["jangyu", "mugye", "daecheong", "bugok", "kwandong"],
+    "mugye": ["jangyu", "yulha", "naedeok", "daecheong"],
+    "naedeok": ["jangyu", "mugye", "daecheong", "bugok"],
+    "daecheong": ["jangyu", "yulha", "mugye", "naedeok"],
+    "bugok": ["jangyu", "yulha", "naedeok"],
+    "sammun": ["jangyu", "suga", "yuha"],
+    "suga": ["jangyu", "sammun", "yuha"],
+    "yuha": ["jangyu", "sammun", "suga"],
+    "eungdal": ["jangyu", "kwandong"],
+    "kwandong": ["jangyu", "yulha", "eungdal", "shinmun"],
+    "shinmun": ["jangyu", "kwandong"],
 
     # 김해 도심 생활권
     "naeoe": ["bukbu", "samgye", "dongsang", "seosang", "buwon"],
