@@ -81,7 +81,7 @@ def head_html(title, description, canonical_path, og_image=None):
 
 <!-- 검색엔진 사이트확인 (네이버/구글 등록 시 채워넣음) -->
 <meta name="naver-site-verification" content="8edd49471f1891161914188e9e2ebba9e81503f0">
-<meta name="google-site-verification" content="">
+<meta name="google-site-verification" content="rJI6KfZbgMGNahEP-ax655LRcM0r89kDGapL0NtYzKU">
 
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="/assets/css/style.css">
