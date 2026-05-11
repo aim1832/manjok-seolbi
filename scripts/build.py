@@ -96,7 +96,7 @@ def head_html(title, description, canonical_path, og_image=None):
   "telephone": "{BIZ['phone']}",
   "url": "{SITE_URL}",
   "description": "{BIZ['description']}",
-  "areaServed": ["김해시", "창원시"],
+  "areaServed": ["김해", "창원"],
   "openingHours": "Mo-Su 00:00-23:59",
   "priceRange": "₩₩"
 }}
