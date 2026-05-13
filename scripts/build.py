@@ -56,10 +56,43 @@ SITE_URL = CONFIG["site"]["url"]
 # ============================================================
 # 공통 HTML 컴포넌트
 # ============================================================
-def head_html(title, description, canonical_path, og_image=None):
-    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심"""
+def head_html(title, description, canonical_path, og_image=None, breadcrumb_items=None):
+    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심.
+
+    breadcrumb_items: [{"name": "...", "url": "..."}, ...] 형식.
+      url이 없는 마지막 아이템은 현재 페이지로 처리됨.
+      검색결과의 URL 부분을 "홈 › 김해 › 욕조 배수구" 형태로 보이게 함.
+    """
     canonical = f"{SITE_URL}{canonical_path}"
     og_image = og_image or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+
+    # Breadcrumb JSON-LD (검색결과의 URL 경로 표시 개선용)
+    breadcrumb_jsonld = ""
+    if breadcrumb_items:
+        items_arr = []
+        for i, item in enumerate(breadcrumb_items):
+            position = i + 1
+            name = item["name"].replace('"', '\\"')
+            if "url" in item:
+                items_arr.append(
+                    f'    {{"@type":"ListItem","position":{position},"name":"{name}","item":"{item["url"]}"}}'
+                )
+            else:
+                items_arr.append(
+                    f'    {{"@type":"ListItem","position":{position},"name":"{name}"}}'
+                )
+        items_joined = ",\n".join(items_arr)
+        breadcrumb_jsonld = f"""
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+{items_joined}
+  ]
+}}
+</script>"""
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -86,6 +119,14 @@ def head_html(title, description, canonical_path, og_image=None):
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="/assets/css/style.css">
 
+<!-- Favicon (브라우저 탭/북마크/검색결과 아이콘) -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicons/favicon-48x48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicons/android-chrome-192x192.png">
+
 <!-- JSON-LD 지역업체 구조화 데이터 -->
 <script type="application/ld+json">
 {{
@@ -100,7 +141,7 @@ def head_html(title, description, canonical_path, og_image=None):
   "openingHours": "Mo-Su 00:00-23:59",
   "priceRange": "₩₩"
 }}
-</script>
+</script>{breadcrumb_jsonld}
 </head>
 <body>
 """
@@ -623,7 +664,19 @@ def build_region_service_pages():
                     f"{city_name} {d['name']} {s['name']} 전문 시공. "
                     f"{s['description']} 24시간 출장 상담 {BIZ['phone_display']}"
                 )
-                html = head_html(title, desc, f"/{slug}/")
+
+                # Breadcrumb: 만족설비 › 김해 › 외동 › 욕조 배수구 교체
+                breadcrumb = [
+                    {"name": "만족설비", "url": SITE_URL + "/"},
+                    {"name": city_name},
+                    {"name": d["name"]},
+                    {"name": s["name"]},
+                ]
+
+                html = head_html(
+                    title, desc, f"/{slug}/",
+                    breadcrumb_items=breadcrumb,
+                )
                 html += header_html()
 
                 html += f"""
@@ -714,7 +767,26 @@ def build_post_pages():
     for p in posts:
         title = f"{p['title']} | {BIZ['name']}"
         desc = p.get("description", p["title"])
-        html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
+
+        # Breadcrumb 생성: 홈 › [지역명 첫 단어] › [서비스명] › 작업 후기
+        # 예: 만족설비 › 김해 › 욕조 배수구 교체 › 작업 후기
+        region_text = p.get("region", "")
+        # 지역명에서 첫 단어만 (예: "김해 외동" → "김해")
+        region_first = region_text.split()[0] if region_text else ""
+        service_name = p.get("service_name", "")
+
+        breadcrumb = [{"name": "만족설비", "url": SITE_URL + "/"}]
+        if region_first:
+            breadcrumb.append({"name": region_first})
+        if service_name:
+            breadcrumb.append({"name": service_name})
+        breadcrumb.append({"name": "작업 후기"})
+
+        html = head_html(
+            title, desc, f"/post/{p['slug']}/",
+            p.get("thumbnail"),
+            breadcrumb_items=breadcrumb,
+        )
         html += header_html()
         html += f"""
 <section class="post-header">
@@ -856,8 +928,11 @@ def copy_assets():
         dest_file = dest / rel_path
         dest_file.parent.mkdir(parents=True, exist_ok=True)
 
+        # 파비콘은 압축하면 안 됨 (사이즈가 이미 작고 .ico는 압축 대상 외)
+        is_favicon = "favicons" in src_file.parts
+
         # 이미지면 압축, 아니면 그냥 복사
-        if src_file.suffix.lower() in IMG_EXTENSIONS:
+        if src_file.suffix.lower() in IMG_EXTENSIONS and not is_favicon:
             size_before = src_file.stat().st_size
             img_total_before += size_before
             compress_image(src_file, dest_file)
@@ -881,6 +956,18 @@ def copy_assets():
         print(f"  ✓ assets/ 복사 완료 (이미지 {img_count}장, 기타 {other_count}개)")
 
 
+def copy_favicon_to_root():
+    """favicon.ico는 브라우저가 /favicon.ico 경로에서 자동으로 찾기 때문에
+    assets/img/favicons/ 안에 있는 파일을 사이트 루트(dist/)로도 복사."""
+    src = ASSETS_SRC / "img" / "favicons" / "favicon.ico"
+    if src.exists():
+        dest = DIST_DIR / "favicon.ico"
+        shutil.copy2(src, dest)
+        print("  ✓ favicon.ico → 사이트 루트 복사")
+    else:
+        print("  ⚠️  favicon.ico 파일이 없습니다 (assets/img/favicons/favicon.ico)")
+
+
 # ============================================================
 # 메인 빌드
 # ============================================================
@@ -895,6 +982,7 @@ def main():
     DIST_DIR.mkdir()
 
     copy_assets()
+    copy_favicon_to_root()
     build_index()
     print("  ✓ 메인 페이지 (index.html)")
     build_region_service_pages()
