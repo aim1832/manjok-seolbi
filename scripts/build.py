@@ -549,7 +549,7 @@ def render_exact_match_reviews(district, service, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        thumb_style = f'style="background-image:url(\'{thumb}\');"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
 
@@ -581,7 +581,7 @@ def render_same_region_reviews(district, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        thumb_style = f'style="background-image:url(\'{thumb}\');"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
         service_name = p.get("service_name", "")
@@ -614,7 +614,7 @@ def render_nearby_reviews(district, service, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
+        thumb_style = f'style="background-image:url(\'{thumb}\');"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
 
