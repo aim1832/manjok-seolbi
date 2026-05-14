@@ -112,6 +112,15 @@ def head_html(title, description, canonical_path, og_image=None):
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="/assets/css/style.css">
 
+<!-- 파비콘 (모든 기기/브라우저 대응) -->
+<link rel="icon" type="image/x-icon" href="/assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicon-48x48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/img/android-chrome-512x512.png">
+
 <!-- JSON-LD 지역업체 구조화 데이터 -->
 <script type="application/ld+json">
 {{
@@ -924,8 +933,16 @@ def copy_assets():
         dest_file = dest / rel_path
         dest_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # 이미지면 압축, 아니면 그냥 복사
-        if src_file.suffix.lower() in IMG_EXTENSIONS:
+        # 파비콘 파일들은 압축 건너뛰기 (원본 PNG/ICO 유지 필요)
+        filename = src_file.name.lower()
+        is_favicon = (
+            "favicon" in filename
+            or "apple-touch-icon" in filename
+            or "android-chrome" in filename
+        )
+
+        # 이미지면 압축, 아니면 그냥 복사 (단, 파비콘은 제외)
+        if src_file.suffix.lower() in IMG_EXTENSIONS and not is_favicon:
             size_before = src_file.stat().st_size
             img_total_before += size_before
             compress_image(src_file, dest_file)
