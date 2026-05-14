@@ -56,42 +56,25 @@ SITE_URL = CONFIG["site"]["url"]
 # ============================================================
 # 공통 HTML 컴포넌트
 # ============================================================
-def head_html(title, description, canonical_path, og_image=None, breadcrumb_items=None):
-    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심.
-
-    breadcrumb_items: [{"name": "...", "url": "..."}, ...] 형식.
-      url이 없는 마지막 아이템은 현재 페이지로 처리됨.
-      검색결과의 URL 부분을 "홈 › 김해 › 욕조 배수구" 형태로 보이게 함.
-    """
+def head_html(title, description, canonical_path, og_image=None):
+    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심"""
     canonical = f"{SITE_URL}{canonical_path}"
-    og_image = og_image or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
 
-    # Breadcrumb JSON-LD (검색결과의 URL 경로 표시 개선용)
-    breadcrumb_jsonld = ""
-    if breadcrumb_items:
-        items_arr = []
-        for i, item in enumerate(breadcrumb_items):
-            position = i + 1
-            name = item["name"].replace('"', '\\"')
-            if "url" in item:
-                items_arr.append(
-                    f'    {{"@type":"ListItem","position":{position},"name":"{name}","item":"{item["url"]}"}}'
-                )
-            else:
-                items_arr.append(
-                    f'    {{"@type":"ListItem","position":{position},"name":"{name}"}}'
-                )
-        items_joined = ",\n".join(items_arr)
-        breadcrumb_jsonld = f"""
-<script type="application/ld+json">
-{{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-{items_joined}
-  ]
-}}
-</script>"""
+    # og:image는 반드시 절대 URL이어야 함 (네이버/구글이 그렇게 요구)
+    if og_image:
+        # 이미 https://로 시작하면 그대로, 아니면 SITE_URL 붙이기
+        if not og_image.startswith("http"):
+            og_image_url = f"{SITE_URL}{og_image}"
+        else:
+            og_image_url = og_image
+        # URL 인코딩 — 괄호 () 같은 특수문자 처리
+        from urllib.parse import quote
+        # SITE_URL 부분은 인코딩 안 하고, 경로만 인코딩
+        if og_image_url.startswith(SITE_URL):
+            path_part = og_image_url[len(SITE_URL):]
+            og_image_url = SITE_URL + quote(path_part, safe="/")
+    else:
+        og_image_url = f"{SITE_URL}{CONFIG['site']['default_og_image']}"
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -109,8 +92,18 @@ def head_html(title, description, canonical_path, og_image=None, breadcrumb_item
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
-<meta property="og:image" content="{og_image}">
+<meta property="og:image" content="{og_image_url}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{title}">
 <meta property="og:site_name" content="{BIZ['name']}">
+<meta property="og:locale" content="ko_KR">
+
+<!-- Twitter Card (트위터/일부 SNS 공유 시) -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="{og_image_url}">
 
 <!-- 검색엔진 사이트확인 (네이버/구글 등록 시 채워넣음) -->
 <meta name="naver-site-verification" content="8edd49471f1891161914188e9e2ebba9e81503f0">
@@ -119,21 +112,13 @@ def head_html(title, description, canonical_path, og_image=None, breadcrumb_item
 <link rel="canonical" href="{canonical}">
 <link rel="stylesheet" href="/assets/css/style.css">
 
-<!-- Favicon (브라우저 탭/북마크/검색결과 아이콘) -->
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="48x48" href="/assets/img/favicons/favicon-48x48.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicons/android-chrome-192x192.png">
-
 <!-- JSON-LD 지역업체 구조화 데이터 -->
 <script type="application/ld+json">
 {{
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "{BIZ['name']}",
-  "image": "{og_image}",
+  "image": "{og_image_url}",
   "telephone": "{BIZ['phone']}",
   "url": "{SITE_URL}",
   "description": "{BIZ['description']}",
@@ -141,7 +126,7 @@ def head_html(title, description, canonical_path, og_image=None, breadcrumb_item
   "openingHours": "Mo-Su 00:00-23:59",
   "priceRange": "₩₩"
 }}
-</script>{breadcrumb_jsonld}
+</script>
 </head>
 <body>
 """
@@ -564,7 +549,7 @@ def render_exact_match_reviews(district, service, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url('{thumb}');"' if thumb else ""
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
 
@@ -596,7 +581,7 @@ def render_same_region_reviews(district, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url('{thumb}');"' if thumb else ""
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
         service_name = p.get("service_name", "")
@@ -629,7 +614,7 @@ def render_nearby_reviews(district, service, posts):
 
     for p in posts:
         thumb = p.get("thumbnail", "")
-        thumb_style = f'style="background-image:url('{thumb}');"' if thumb else ""
+        thumb_style = f'style="background-image:url({thumb});"' if thumb else ""
         date = p.get("date", "")
         region = p.get("region", "")
 
@@ -664,19 +649,7 @@ def build_region_service_pages():
                     f"{city_name} {d['name']} {s['name']} 전문 시공. "
                     f"{s['description']} 24시간 출장 상담 {BIZ['phone_display']}"
                 )
-
-                # Breadcrumb: 만족설비 › 김해 › 외동 › 욕조 배수구 교체
-                breadcrumb = [
-                    {"name": "만족설비", "url": SITE_URL + "/"},
-                    {"name": city_name},
-                    {"name": d["name"]},
-                    {"name": s["name"]},
-                ]
-
-                html = head_html(
-                    title, desc, f"/{slug}/",
-                    breadcrumb_items=breadcrumb,
-                )
+                html = head_html(title, desc, f"/{slug}/")
                 html += header_html()
 
                 html += f"""
@@ -767,26 +740,49 @@ def build_post_pages():
     for p in posts:
         title = f"{p['title']} | {BIZ['name']}"
         desc = p.get("description", p["title"])
+        html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
 
-        # Breadcrumb 생성: 홈 › [지역명 첫 단어] › [서비스명] › 작업 후기
-        # 예: 만족설비 › 김해 › 욕조 배수구 교체 › 작업 후기
-        region_text = p.get("region", "")
-        # 지역명에서 첫 단어만 (예: "김해 외동" → "김해")
-        region_first = region_text.split()[0] if region_text else ""
-        service_name = p.get("service_name", "")
+        # ⭐ 후기 페이지 전용 NewsArticle 스키마 추가 (네이버 검색 시 사진 노출에 핵심!)
+        thumbnail = p.get("thumbnail", "")
+        if thumbnail and not thumbnail.startswith("http"):
+            from urllib.parse import quote
+            thumbnail_url = SITE_URL + quote(thumbnail, safe="/")
+        else:
+            thumbnail_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
 
-        breadcrumb = [{"name": "만족설비", "url": SITE_URL + "/"}]
-        if region_first:
-            breadcrumb.append({"name": region_first})
-        if service_name:
-            breadcrumb.append({"name": service_name})
-        breadcrumb.append({"name": "작업 후기"})
+        article_schema = f"""
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": "{p['title']}",
+  "description": "{desc}",
+  "image": ["{thumbnail_url}"],
+  "datePublished": "{p.get('date', '')}",
+  "dateModified": "{p.get('date', '')}",
+  "author": {{
+    "@type": "Organization",
+    "name": "{BIZ['name']}",
+    "url": "{SITE_URL}"
+  }},
+  "publisher": {{
+    "@type": "Organization",
+    "name": "{BIZ['name']}",
+    "logo": {{
+      "@type": "ImageObject",
+      "url": "{SITE_URL}{CONFIG['site']['default_og_image']}"
+    }}
+  }},
+  "mainEntityOfPage": {{
+    "@type": "WebPage",
+    "@id": "{SITE_URL}/post/{p['slug']}/"
+  }}
+}}
+</script>
+"""
+        # </head> 닫히기 전에 article schema 삽입
+        html = html.replace("</head>", article_schema + "</head>")
 
-        html = head_html(
-            title, desc, f"/post/{p['slug']}/",
-            p.get("thumbnail"),
-            breadcrumb_items=breadcrumb,
-        )
         html += header_html()
         html += f"""
 <section class="post-header">
@@ -928,11 +924,8 @@ def copy_assets():
         dest_file = dest / rel_path
         dest_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # 파비콘은 압축하면 안 됨 (사이즈가 이미 작고 .ico는 압축 대상 외)
-        is_favicon = "favicons" in src_file.parts
-
         # 이미지면 압축, 아니면 그냥 복사
-        if src_file.suffix.lower() in IMG_EXTENSIONS and not is_favicon:
+        if src_file.suffix.lower() in IMG_EXTENSIONS:
             size_before = src_file.stat().st_size
             img_total_before += size_before
             compress_image(src_file, dest_file)
@@ -956,18 +949,6 @@ def copy_assets():
         print(f"  ✓ assets/ 복사 완료 (이미지 {img_count}장, 기타 {other_count}개)")
 
 
-def copy_favicon_to_root():
-    """favicon.ico는 브라우저가 /favicon.ico 경로에서 자동으로 찾기 때문에
-    assets/img/favicons/ 안에 있는 파일을 사이트 루트(dist/)로도 복사."""
-    src = ASSETS_SRC / "img" / "favicons" / "favicon.ico"
-    if src.exists():
-        dest = DIST_DIR / "favicon.ico"
-        shutil.copy2(src, dest)
-        print("  ✓ favicon.ico → 사이트 루트 복사")
-    else:
-        print("  ⚠️  favicon.ico 파일이 없습니다 (assets/img/favicons/favicon.ico)")
-
-
 # ============================================================
 # 메인 빌드
 # ============================================================
@@ -982,7 +963,6 @@ def main():
     DIST_DIR.mkdir()
 
     copy_assets()
-    copy_favicon_to_root()
     build_index()
     print("  ✓ 메인 페이지 (index.html)")
     build_region_service_pages()
