@@ -7,9 +7,8 @@
   2) 메인 페이지(index.html) 생성
   3) 지역×서비스 조합별 페이지 자동 생성 (예: /jangyu1-drain-clog/)
   4) 작업 후기 페이지 생성 (data/posts/*.json 기반)
-  5) 후기마다 1200x630 OG 이미지 자동 생성 (영문 파일명) ← 네이버 사진 노출용
-  6) sitemap.xml, robots.txt 자동 생성
-  7) 모든 페이지에 SEO 메타태그 + JSON-LD 구조화 데이터 삽입
+  5) sitemap.xml, robots.txt 자동 생성
+  6) 모든 페이지에 SEO 메타태그 + JSON-LD 구조화 데이터 삽입
 
 사용법:
   python scripts/build.py
@@ -23,7 +22,6 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
 
 # Pillow는 이미지 자동 압축용 (없으면 압축 없이 진행)
 try:
@@ -37,11 +35,6 @@ except ImportError:
 IMG_MAX_WIDTH = 1600        # 최대 가로 픽셀 (이보다 크면 자동으로 줄임)
 IMG_QUALITY = 82            # JPEG 품질 (0~100, 80~85가 균형 좋음)
 IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-
-# ===== OG 이미지 설정 (네이버 사진 노출용) =====
-OG_WIDTH = 1200
-OG_HEIGHT = 630
-OG_QUALITY = 85
 
 # ===== 경로 설정 =====
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,12 +56,8 @@ SITE_URL = CONFIG["site"]["url"]
 # ============================================================
 # 공통 HTML 컴포넌트
 # ============================================================
-def head_html(title, description, canonical_path, og_image=None, og_width=None, og_height=None):
-    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심
-
-    og_image: 페이지별 OG 이미지 경로 (절대 URL 또는 /로 시작하는 상대 경로)
-    og_width/og_height: OG 이미지 실제 크기 (생략 시 기본 1200x630)
-    """
+def head_html(title, description, canonical_path, og_image=None):
+    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심"""
     canonical = f"{SITE_URL}{canonical_path}"
 
     # og:image는 반드시 절대 URL이어야 함 (네이버/구글이 그렇게 요구)
@@ -79,16 +68,13 @@ def head_html(title, description, canonical_path, og_image=None, og_width=None, 
         else:
             og_image_url = og_image
         # URL 인코딩 — 괄호 () 같은 특수문자 처리
+        from urllib.parse import quote
         # SITE_URL 부분은 인코딩 안 하고, 경로만 인코딩
         if og_image_url.startswith(SITE_URL):
             path_part = og_image_url[len(SITE_URL):]
             og_image_url = SITE_URL + quote(path_part, safe="/")
     else:
         og_image_url = f"{SITE_URL}{CONFIG['site']['default_og_image']}"
-
-    # OG 이미지 크기 (생성된 이미지 실제 크기를 정확히 명시)
-    w = og_width if og_width else OG_WIDTH
-    h = og_height if og_height else OG_HEIGHT
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -107,8 +93,8 @@ def head_html(title, description, canonical_path, og_image=None, og_width=None, 
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{og_image_url}">
-<meta property="og:image:width" content="{w}">
-<meta property="og:image:height" content="{h}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{title}">
 <meta property="og:site_name" content="{BIZ['name']}">
 <meta property="og:locale" content="ko_KR">
@@ -283,96 +269,6 @@ def service_icon_svg(slug):
 
 
 # ============================================================
-# OG 이미지 자동 생성 (네이버 검색 사진 노출용)
-# ============================================================
-def generate_og_image(post_slug, thumbnail_path):
-    """후기 첫 사진을 기반으로 1200x630 OG 이미지를 생성.
-
-    왜 필요한가?
-      - 네이버는 OG 이미지의 실제 크기와 메타태그가 일치할 때 썸네일 노출 확률↑
-      - 한글+공백+괄호 파일명 URL은 크롤러 처리 실패 가능 → 영문 ASCII 파일명 필요
-      - 후기 원본 사진은 사장님 규칙대로 절대 건드리지 않고, OG용만 별도 생성
-
-    인자:
-      post_slug: 후기 slug (예: gimhae-hwalcheon-toilet-20260515)
-      thumbnail_path: 후기 thumbnail 경로 (예: /assets/img/posts/.../변기수리 (1).jpg)
-
-    반환:
-      OG 이미지 URL 경로 (예: /assets/img/og/og-{slug}.jpg)
-      실패 시 None (기본 OG 이미지로 폴백)
-    """
-    if not PIL_AVAILABLE:
-        return None
-
-    if not thumbnail_path or not thumbnail_path.startswith("/assets/"):
-        return None
-
-    # /assets/img/posts/... → ROOT/assets/img/posts/...
-    rel = thumbnail_path.lstrip("/").replace("assets/", "", 1)
-    src_path = ASSETS_SRC / rel
-
-    if not src_path.exists():
-        print(f"  ⚠️  OG 이미지 원본 없음: {src_path.name}")
-        return None
-
-    try:
-        img = Image.open(src_path)
-
-        # EXIF 회전 정보 반영 (휴대폰 사진이 옆으로 누운 문제 해결)
-        try:
-            from PIL import ImageOps
-            img = ImageOps.exif_transpose(img)
-        except Exception:
-            pass
-
-        # RGB 변환 (JPEG 저장을 위해)
-        if img.mode in ("RGBA", "P"):
-            background = Image.new("RGB", img.size, (255, 255, 255))
-            if img.mode == "RGBA":
-                background.paste(img, mask=img.split()[3])
-            else:
-                background.paste(img)
-            img = background
-        elif img.mode != "RGB":
-            img = img.convert("RGB")
-
-        # 1200x630 cover 방식 (비율 유지하면서 가운데 크롭)
-        target_w, target_h = OG_WIDTH, OG_HEIGHT
-        target_ratio = target_w / target_h
-        src_ratio = img.width / img.height
-
-        if src_ratio > target_ratio:
-            # 원본이 더 가로로 김 → 세로 맞추고 좌우 크롭
-            new_h = target_h
-            new_w = int(img.width * (target_h / img.height))
-            img = img.resize((new_w, new_h), Image.LANCZOS)
-            left = (new_w - target_w) // 2
-            img = img.crop((left, 0, left + target_w, target_h))
-        else:
-            # 원본이 더 세로로 김 → 가로 맞추고 위아래 크롭 (변기 같은 휴대폰 세로 사진은 이쪽)
-            # 위쪽이 더 정보가 많을 가능성 높으므로 위쪽 25%에서 크롭
-            new_w = target_w
-            new_h = int(img.height * (target_w / img.width))
-            img = img.resize((new_w, new_h), Image.LANCZOS)
-            # 위에서부터 25% 지점을 중심으로 크롭 (인물 사진처럼 위 잘리지 않게)
-            top = int((new_h - target_h) * 0.25)
-            top = max(0, min(top, new_h - target_h))
-            img = img.crop((0, top, target_w, top + target_h))
-
-        # 저장 — 영문 ASCII 파일명으로
-        og_dir = DIST_DIR / "assets" / "img" / "og"
-        og_dir.mkdir(parents=True, exist_ok=True)
-        og_path = og_dir / f"og-{post_slug}.jpg"
-        img.save(og_path, "JPEG", quality=OG_QUALITY, optimize=True, progressive=True)
-
-        return f"/assets/img/og/og-{post_slug}.jpg"
-
-    except Exception as e:
-        print(f"  ⚠️  OG 이미지 생성 실패 ({post_slug}): {e}")
-        return None
-
-
-# ============================================================
 # 1. 메인 페이지 생성
 # ============================================================
 def build_index():
@@ -491,7 +387,18 @@ def build_index():
       </div>
     </div>
   </a>"""
-        html += "</div></section>"
+        html += "</div>"
+
+        # 후기가 6개 초과이면 "전체 후기 보기" 버튼 표시
+        if len(posts) > 6:
+            html += f"""
+<div style="text-align:center;margin:30px auto 10px;">
+  <a href="/reviews/" style="display:inline-block;padding:14px 32px;background:#2d4a2b;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:1.05em;">
+    📋 전체 후기 보기 (총 {len(posts)}건) →
+  </a>
+</div>
+"""
+        html += "</section>"
 
     # CTA
     html += '<div class="container">'
@@ -842,42 +749,29 @@ def load_posts():
     if not POSTS_DIR.exists():
         return []
     posts = []
-    for f in sorted(POSTS_DIR.glob("*.json"), reverse=True):
+    for f in POSTS_DIR.glob("*.json"):
         with open(f, "r", encoding="utf-8") as fp:
             posts.append(json.load(fp))
+    # 각 후기의 'date' 필드 기준으로 정렬 (최신순)
+    # date 없는 경우는 빈 문자열 → 가장 뒤로 감
+    posts.sort(key=lambda p: p.get("date", ""), reverse=True)
     return posts
 
 
 def build_post_pages():
     posts = load_posts()
-    og_generated = 0
-    og_failed = 0
-
     for p in posts:
         title = f"{p['title']} | {BIZ['name']}"
         desc = p.get("description", p["title"])
+        html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
 
-        # ⭐ OG 이미지 자동 생성 (1200x630, 영문 파일명) — 네이버 사진 노출용
-        og_image_path = generate_og_image(p['slug'], p.get('thumbnail'))
-        if og_image_path:
-            og_generated += 1
-            # 정확히 1200x630이라고 메타태그에 명시 (이전엔 거짓말이었음)
-            html = head_html(title, desc, f"/post/{p['slug']}/", og_image_path, OG_WIDTH, OG_HEIGHT)
+        # ⭐ 후기 페이지 전용 NewsArticle 스키마 추가 (네이버 검색 시 사진 노출에 핵심!)
+        thumbnail = p.get("thumbnail", "")
+        if thumbnail and not thumbnail.startswith("http"):
+            from urllib.parse import quote
+            thumbnail_url = SITE_URL + quote(thumbnail, safe="/")
         else:
-            og_failed += 1
-            # 생성 실패 시 원본 thumbnail로 폴백 (크기 모름 → 기본값)
-            html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
-
-        # ⭐ 후기 페이지 전용 NewsArticle 스키마 — 검색엔진이 후기 페이지로 정확히 인식
-        # NewsArticle의 image도 OG 이미지(1200x630 영문 파일명)를 우선 사용
-        if og_image_path:
-            article_image_url = SITE_URL + quote(og_image_path, safe="/")
-        else:
-            thumbnail = p.get("thumbnail", "")
-            if thumbnail and not thumbnail.startswith("http"):
-                article_image_url = SITE_URL + quote(thumbnail, safe="/")
-            else:
-                article_image_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+            thumbnail_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
 
         article_schema = f"""
 <script type="application/ld+json">
@@ -886,7 +780,7 @@ def build_post_pages():
   "@type": "NewsArticle",
   "headline": "{p['title']}",
   "description": "{desc}",
-  "image": ["{article_image_url}"],
+  "image": ["{thumbnail_url}"],
   "datePublished": "{p.get('date', '')}",
   "dateModified": "{p.get('date', '')}",
   "author": {{
@@ -930,25 +824,139 @@ def build_post_pages():
         html += "</article>"
         html += footer_html()
         write_file(DIST_DIR / "post" / p["slug"] / "index.html", html)
-
-    msg = f"  ✓ 후기 페이지 {len(posts)}개 생성 (OG 이미지 {og_generated}개 자동 생성"
-    if og_failed > 0:
-        msg += f", {og_failed}개 실패 → 기본 이미지 사용"
-    msg += ")"
-    print(msg)
+    print(f"  ✓ 후기 페이지 {len(posts)}개 생성")
 
 
 # ============================================================
 # 4. sitemap.xml + robots.txt 자동 생성
 # ============================================================
+def build_reviews_index():
+    """전체 후기 목록 페이지 (/reviews/) — 페이지네이션 포함"""
+    posts = load_posts()
+    if not posts:
+        return
+
+    POSTS_PER_PAGE = 6
+    total_pages = (len(posts) + POSTS_PER_PAGE - 1) // POSTS_PER_PAGE
+
+    for page_num in range(1, total_pages + 1):
+        # 이 페이지에 표시할 후기들
+        start = (page_num - 1) * POSTS_PER_PAGE
+        end = start + POSTS_PER_PAGE
+        page_posts = posts[start:end]
+
+        # 페이지 정보
+        if page_num == 1:
+            path = "/reviews/"
+            title = f"전체 작업 후기 | {BIZ['name']}"
+        else:
+            path = f"/reviews/page/{page_num}/"
+            title = f"작업 후기 ({page_num}페이지) | {BIZ['name']}"
+
+        desc = f"김해·창원 만족설비의 실제 작업 후기 모음. 하수구 막힘, 수전·변기·세면대 교체 등 다양한 시공 사례를 확인하세요."
+
+        html = head_html(title, desc, path)
+        html += header_html()
+
+        # 헤더 영역
+        html += f"""
+<section class="post-header">
+  <h1>📋 만족설비 전체 작업 후기</h1>
+  <div class="post-meta">
+    <span>📍 김해·창원 지역</span>
+    <span>📝 총 {len(posts)}건의 후기</span>
+  </div>
+</section>
+
+<article class="post-content">
+  <p>안녕하세요, 김해·창원 배관설비 전문 <strong>{BIZ['name']}</strong>입니다.
+  실제 작업 후기들을 한눈에 보실 수 있도록 정리했습니다.
+  각 후기를 클릭하시면 시공 과정과 사진을 자세히 확인하실 수 있어요.</p>
+</article>
+
+<div class="reviews-grid" style="max-width:1100px;margin:30px auto;padding:0 20px;">
+"""
+
+        # 후기 카드들
+        for p in page_posts:
+            thumb = p.get("thumbnail", "")
+            thumb_style = f"style=\"background-image:url('{thumb}');\"" if thumb else ""
+            date = p.get("date", "")
+            region = p.get("region", "")
+            service_name = p.get("service_name", "")
+
+            html += f"""
+    <a href="/post/{p['slug']}/" class="review-card">
+      <div class="thumb" {thumb_style}></div>
+      <div class="body">
+        <span class="badge">{service_name}</span>
+        <h4>{p['title']}</h4>
+        <p class="meta">📍 {region} · {date}</p>
+      </div>
+    </a>"""
+
+        html += "</div>"
+
+        # 페이지네이션 (페이지가 2개 이상일 때만)
+        if total_pages > 1:
+            html += '<nav class="pagination" style="text-align:center;margin:40px auto;max-width:1100px;padding:20px;">'
+
+            # 이전 버튼
+            if page_num > 1:
+                prev_path = "/reviews/" if page_num == 2 else f"/reviews/page/{page_num - 1}/"
+                html += f'<a href="{prev_path}" class="page-link" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#fff;border:1px solid #2d4a2b;color:#2d4a2b;border-radius:6px;text-decoration:none;font-weight:600;">← 이전</a>'
+            else:
+                html += '<span class="page-link disabled" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#f5f5f5;border:1px solid #ccc;color:#999;border-radius:6px;font-weight:600;">← 이전</span>'
+
+            # 페이지 번호들
+            for i in range(1, total_pages + 1):
+                page_path = "/reviews/" if i == 1 else f"/reviews/page/{i}/"
+                if i == page_num:
+                    # 현재 페이지 (강조)
+                    html += f'<span class="page-link current" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#2d4a2b;color:#fff;border-radius:6px;font-weight:700;">{i}</span>'
+                else:
+                    html += f'<a href="{page_path}" class="page-link" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#fff;border:1px solid #2d4a2b;color:#2d4a2b;border-radius:6px;text-decoration:none;font-weight:600;">{i}</a>'
+
+            # 다음 버튼
+            if page_num < total_pages:
+                next_path = f"/reviews/page/{page_num + 1}/"
+                html += f'<a href="{next_path}" class="page-link" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#fff;border:1px solid #2d4a2b;color:#2d4a2b;border-radius:6px;text-decoration:none;font-weight:600;">다음 →</a>'
+            else:
+                html += '<span class="page-link disabled" style="display:inline-block;padding:10px 16px;margin:0 4px;background:#f5f5f5;border:1px solid #ccc;color:#999;border-radius:6px;font-weight:600;">다음 →</span>'
+
+            html += '</nav>'
+
+        # CTA 박스
+        html += cta_box_html("후기를 보시고 만족설비에 작업 문의 주세요!")
+
+        html += footer_html()
+
+        # 파일 저장
+        if page_num == 1:
+            write_file(DIST_DIR / "reviews" / "index.html", html)
+        else:
+            write_file(DIST_DIR / "reviews" / "page" / str(page_num) / "index.html", html)
+
+    print(f"  ✓ 후기 목록 페이지 {total_pages}개 생성")
+
+
 def build_sitemap():
     urls = ["/"]
     for region_key, region_data in REGIONS.items():
         for d in region_data["districts"]:
             for s in SERVICES:
                 urls.append(f"/{d['slug']}-{s['slug']}/")
-    for p in load_posts():
+    posts = load_posts()
+    for p in posts:
         urls.append(f"/post/{p['slug']}/")
+
+    # 후기 목록 페이지도 사이트맵에 추가
+    if posts:
+        urls.append("/reviews/")
+        POSTS_PER_PAGE = 6
+        total_pages = (len(posts) + POSTS_PER_PAGE - 1) // POSTS_PER_PAGE
+        for page_num in range(2, total_pages + 1):
+            urls.append(f"/reviews/page/{page_num}/")
 
     today = datetime.now().strftime("%Y-%m-%d")
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -1109,6 +1117,7 @@ def main():
     print("  ✓ 메인 페이지 (index.html)")
     build_region_service_pages()
     build_post_pages()
+    build_reviews_index()
     build_sitemap()
     build_robots()
 
