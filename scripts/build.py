@@ -7,8 +7,9 @@
   2) 메인 페이지(index.html) 생성
   3) 지역×서비스 조합별 페이지 자동 생성 (예: /jangyu1-drain-clog/)
   4) 작업 후기 페이지 생성 (data/posts/*.json 기반)
-  5) sitemap.xml, robots.txt 자동 생성
-  6) 모든 페이지에 SEO 메타태그 + JSON-LD 구조화 데이터 삽입
+  5) 후기마다 1200x630 OG 이미지 자동 생성 (영문 파일명) ← 네이버 사진 노출용
+  6) sitemap.xml, robots.txt 자동 생성
+  7) 모든 페이지에 SEO 메타태그 + JSON-LD 구조화 데이터 삽입
 
 사용법:
   python scripts/build.py
@@ -22,6 +23,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 # Pillow는 이미지 자동 압축용 (없으면 압축 없이 진행)
 try:
@@ -35,6 +37,11 @@ except ImportError:
 IMG_MAX_WIDTH = 1600        # 최대 가로 픽셀 (이보다 크면 자동으로 줄임)
 IMG_QUALITY = 82            # JPEG 품질 (0~100, 80~85가 균형 좋음)
 IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+# ===== OG 이미지 설정 (네이버 사진 노출용) =====
+OG_WIDTH = 1200
+OG_HEIGHT = 630
+OG_QUALITY = 85
 
 # ===== 경로 설정 =====
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,8 +63,12 @@ SITE_URL = CONFIG["site"]["url"]
 # ============================================================
 # 공통 HTML 컴포넌트
 # ============================================================
-def head_html(title, description, canonical_path, og_image=None):
-    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심"""
+def head_html(title, description, canonical_path, og_image=None, og_width=None, og_height=None):
+    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심
+
+    og_image: 페이지별 OG 이미지 경로 (절대 URL 또는 /로 시작하는 상대 경로)
+    og_width/og_height: OG 이미지 실제 크기 (생략 시 기본 1200x630)
+    """
     canonical = f"{SITE_URL}{canonical_path}"
 
     # og:image는 반드시 절대 URL이어야 함 (네이버/구글이 그렇게 요구)
@@ -68,13 +79,16 @@ def head_html(title, description, canonical_path, og_image=None):
         else:
             og_image_url = og_image
         # URL 인코딩 — 괄호 () 같은 특수문자 처리
-        from urllib.parse import quote
         # SITE_URL 부분은 인코딩 안 하고, 경로만 인코딩
         if og_image_url.startswith(SITE_URL):
             path_part = og_image_url[len(SITE_URL):]
             og_image_url = SITE_URL + quote(path_part, safe="/")
     else:
         og_image_url = f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+
+    # OG 이미지 크기 (생성된 이미지 실제 크기를 정확히 명시)
+    w = og_width if og_width else OG_WIDTH
+    h = og_height if og_height else OG_HEIGHT
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -93,8 +107,8 @@ def head_html(title, description, canonical_path, og_image=None):
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{og_image_url}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:width" content="{w}">
+<meta property="og:image:height" content="{h}">
 <meta property="og:image:alt" content="{title}">
 <meta property="og:site_name" content="{BIZ['name']}">
 <meta property="og:locale" content="ko_KR">
@@ -266,6 +280,96 @@ def service_icon_svg(slug):
     return f'''<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{primary}" stroke-width="2" aria-hidden="true">
   <circle cx="12" cy="12" r="9"/>
 </svg>'''
+
+
+# ============================================================
+# OG 이미지 자동 생성 (네이버 검색 사진 노출용)
+# ============================================================
+def generate_og_image(post_slug, thumbnail_path):
+    """후기 첫 사진을 기반으로 1200x630 OG 이미지를 생성.
+
+    왜 필요한가?
+      - 네이버는 OG 이미지의 실제 크기와 메타태그가 일치할 때 썸네일 노출 확률↑
+      - 한글+공백+괄호 파일명 URL은 크롤러 처리 실패 가능 → 영문 ASCII 파일명 필요
+      - 후기 원본 사진은 사장님 규칙대로 절대 건드리지 않고, OG용만 별도 생성
+
+    인자:
+      post_slug: 후기 slug (예: gimhae-hwalcheon-toilet-20260515)
+      thumbnail_path: 후기 thumbnail 경로 (예: /assets/img/posts/.../변기수리 (1).jpg)
+
+    반환:
+      OG 이미지 URL 경로 (예: /assets/img/og/og-{slug}.jpg)
+      실패 시 None (기본 OG 이미지로 폴백)
+    """
+    if not PIL_AVAILABLE:
+        return None
+
+    if not thumbnail_path or not thumbnail_path.startswith("/assets/"):
+        return None
+
+    # /assets/img/posts/... → ROOT/assets/img/posts/...
+    rel = thumbnail_path.lstrip("/").replace("assets/", "", 1)
+    src_path = ASSETS_SRC / rel
+
+    if not src_path.exists():
+        print(f"  ⚠️  OG 이미지 원본 없음: {src_path.name}")
+        return None
+
+    try:
+        img = Image.open(src_path)
+
+        # EXIF 회전 정보 반영 (휴대폰 사진이 옆으로 누운 문제 해결)
+        try:
+            from PIL import ImageOps
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
+        # RGB 변환 (JPEG 저장을 위해)
+        if img.mode in ("RGBA", "P"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "RGBA":
+                background.paste(img, mask=img.split()[3])
+            else:
+                background.paste(img)
+            img = background
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # 1200x630 cover 방식 (비율 유지하면서 가운데 크롭)
+        target_w, target_h = OG_WIDTH, OG_HEIGHT
+        target_ratio = target_w / target_h
+        src_ratio = img.width / img.height
+
+        if src_ratio > target_ratio:
+            # 원본이 더 가로로 김 → 세로 맞추고 좌우 크롭
+            new_h = target_h
+            new_w = int(img.width * (target_h / img.height))
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            left = (new_w - target_w) // 2
+            img = img.crop((left, 0, left + target_w, target_h))
+        else:
+            # 원본이 더 세로로 김 → 가로 맞추고 위아래 크롭 (변기 같은 휴대폰 세로 사진은 이쪽)
+            # 위쪽이 더 정보가 많을 가능성 높으므로 위쪽 25%에서 크롭
+            new_w = target_w
+            new_h = int(img.height * (target_w / img.width))
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            # 위에서부터 25% 지점을 중심으로 크롭 (인물 사진처럼 위 잘리지 않게)
+            top = int((new_h - target_h) * 0.25)
+            top = max(0, min(top, new_h - target_h))
+            img = img.crop((0, top, target_w, top + target_h))
+
+        # 저장 — 영문 ASCII 파일명으로
+        og_dir = DIST_DIR / "assets" / "img" / "og"
+        og_dir.mkdir(parents=True, exist_ok=True)
+        og_path = og_dir / f"og-{post_slug}.jpg"
+        img.save(og_path, "JPEG", quality=OG_QUALITY, optimize=True, progressive=True)
+
+        return f"/assets/img/og/og-{post_slug}.jpg"
+
+    except Exception as e:
+        print(f"  ⚠️  OG 이미지 생성 실패 ({post_slug}): {e}")
+        return None
 
 
 # ============================================================
@@ -746,18 +850,34 @@ def load_posts():
 
 def build_post_pages():
     posts = load_posts()
+    og_generated = 0
+    og_failed = 0
+
     for p in posts:
         title = f"{p['title']} | {BIZ['name']}"
         desc = p.get("description", p["title"])
-        html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
 
-        # ⭐ 후기 페이지 전용 NewsArticle 스키마 추가 (네이버 검색 시 사진 노출에 핵심!)
-        thumbnail = p.get("thumbnail", "")
-        if thumbnail and not thumbnail.startswith("http"):
-            from urllib.parse import quote
-            thumbnail_url = SITE_URL + quote(thumbnail, safe="/")
+        # ⭐ OG 이미지 자동 생성 (1200x630, 영문 파일명) — 네이버 사진 노출용
+        og_image_path = generate_og_image(p['slug'], p.get('thumbnail'))
+        if og_image_path:
+            og_generated += 1
+            # 정확히 1200x630이라고 메타태그에 명시 (이전엔 거짓말이었음)
+            html = head_html(title, desc, f"/post/{p['slug']}/", og_image_path, OG_WIDTH, OG_HEIGHT)
         else:
-            thumbnail_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+            og_failed += 1
+            # 생성 실패 시 원본 thumbnail로 폴백 (크기 모름 → 기본값)
+            html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
+
+        # ⭐ 후기 페이지 전용 NewsArticle 스키마 — 검색엔진이 후기 페이지로 정확히 인식
+        # NewsArticle의 image도 OG 이미지(1200x630 영문 파일명)를 우선 사용
+        if og_image_path:
+            article_image_url = SITE_URL + quote(og_image_path, safe="/")
+        else:
+            thumbnail = p.get("thumbnail", "")
+            if thumbnail and not thumbnail.startswith("http"):
+                article_image_url = SITE_URL + quote(thumbnail, safe="/")
+            else:
+                article_image_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
 
         article_schema = f"""
 <script type="application/ld+json">
@@ -766,7 +886,7 @@ def build_post_pages():
   "@type": "NewsArticle",
   "headline": "{p['title']}",
   "description": "{desc}",
-  "image": ["{thumbnail_url}"],
+  "image": ["{article_image_url}"],
   "datePublished": "{p.get('date', '')}",
   "dateModified": "{p.get('date', '')}",
   "author": {{
@@ -810,7 +930,12 @@ def build_post_pages():
         html += "</article>"
         html += footer_html()
         write_file(DIST_DIR / "post" / p["slug"] / "index.html", html)
-    print(f"  ✓ 후기 페이지 {len(posts)}개 생성")
+
+    msg = f"  ✓ 후기 페이지 {len(posts)}개 생성 (OG 이미지 {og_generated}개 자동 생성"
+    if og_failed > 0:
+        msg += f", {og_failed}개 실패 → 기본 이미지 사용"
+    msg += ")"
+    print(msg)
 
 
 # ============================================================
