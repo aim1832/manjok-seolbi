@@ -50,31 +50,65 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as f:
 BIZ = CONFIG["business"]
 SERVICES = CONFIG["services"]
 REGIONS = CONFIG["regions"]
-SITE_URL = CONFIG["site"]["url"]
+SITE_URL_RAW = CONFIG["site"]["url"]  # 원본 (한글일 수 있음)
+
+
+def get_punycode_url(url):
+    """한글 도메인을 Punycode로 변환. 이미 영문이면 그대로 반환.
+    
+    예: https://만족설비.com → https://xn--lz2bu5fcxcu7k.com
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    try:
+        # IDNA 인코딩으로 한글 도메인을 Punycode로 변환
+        host_punycode = parsed.hostname.encode("idna").decode("ascii")
+        # scheme + punycode 도메인 + 나머지
+        result = f"{parsed.scheme}://{host_punycode}"
+        if parsed.path:
+            result += parsed.path
+        return result
+    except (UnicodeError, AttributeError):
+        # 이미 ASCII거나 변환 실패 시 원본 반환
+        return url
+
+
+# 하이브리드 URL 시스템
+# SITE_URL = 사용자에게 보이는 한글 도메인 (예: https://만족설비.com)
+# SITE_URL_TECHNICAL = 기술적 처리용 Punycode 도메인 (예: https://xn--lz2bu5fcxcu7k.com)
+SITE_URL = SITE_URL_RAW
+SITE_URL_TECHNICAL = get_punycode_url(SITE_URL_RAW)
 
 
 # ============================================================
 # 공통 HTML 컴포넌트
 # ============================================================
 def head_html(title, description, canonical_path, og_image=None):
-    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심"""
-    canonical = f"{SITE_URL}{canonical_path}"
+    """모든 페이지에 들어가는 <head> 영역 — SEO의 핵심
+    
+    하이브리드 URL 전략:
+    - canonical, og:image, JSON-LD: Punycode (검색엔진 안전 처리)
+    - og:url: 한글 (브라우저 주소창에 예쁘게 표시)
+    """
+    # canonical은 검색엔진용이므로 Punycode 사용 (안정성)
+    canonical = f"{SITE_URL_TECHNICAL}{canonical_path}"
+    # og:url은 사용자에게 보이는 거니까 한글 사용
+    display_url = f"{SITE_URL}{canonical_path}"
 
     # og:image는 반드시 절대 URL이어야 함 (네이버/구글이 그렇게 요구)
+    # 이미지는 검색엔진/SNS가 가져가니까 Punycode 사용 (안정성)
     if og_image:
-        # 이미 https://로 시작하면 그대로, 아니면 SITE_URL 붙이기
         if not og_image.startswith("http"):
-            og_image_url = f"{SITE_URL}{og_image}"
+            og_image_url = f"{SITE_URL_TECHNICAL}{og_image}"
         else:
             og_image_url = og_image
         # URL 인코딩 — 괄호 () 같은 특수문자 처리
         from urllib.parse import quote
-        # SITE_URL 부분은 인코딩 안 하고, 경로만 인코딩
-        if og_image_url.startswith(SITE_URL):
-            path_part = og_image_url[len(SITE_URL):]
-            og_image_url = SITE_URL + quote(path_part, safe="/")
+        if og_image_url.startswith(SITE_URL_TECHNICAL):
+            path_part = og_image_url[len(SITE_URL_TECHNICAL):]
+            og_image_url = SITE_URL_TECHNICAL + quote(path_part, safe="/")
     else:
-        og_image_url = f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+        og_image_url = f"{SITE_URL_TECHNICAL}{CONFIG['site']['default_og_image']}"
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -91,7 +125,7 @@ def head_html(title, description, canonical_path, og_image=None):
 <meta property="og:type" content="website">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
-<meta property="og:url" content="{canonical}">
+<meta property="og:url" content="{display_url}">
 <meta property="og:image" content="{og_image_url}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -129,7 +163,7 @@ def head_html(title, description, canonical_path, og_image=None):
   "name": "{BIZ['name']}",
   "image": "{og_image_url}",
   "telephone": "{BIZ['phone']}",
-  "url": "{SITE_URL}",
+  "url": "{SITE_URL_TECHNICAL}",
   "description": "{BIZ['description']}",
   "areaServed": ["김해", "창원"],
   "openingHours": "Mo-Su 00:00-23:59",
@@ -766,12 +800,13 @@ def build_post_pages():
         html = head_html(title, desc, f"/post/{p['slug']}/", p.get("thumbnail"))
 
         # ⭐ 후기 페이지 전용 NewsArticle 스키마 추가 (네이버 검색 시 사진 노출에 핵심!)
+        # 검색엔진이 처리하는 거니까 모든 URL에 Punycode 사용
         thumbnail = p.get("thumbnail", "")
         if thumbnail and not thumbnail.startswith("http"):
             from urllib.parse import quote
-            thumbnail_url = SITE_URL + quote(thumbnail, safe="/")
+            thumbnail_url = SITE_URL_TECHNICAL + quote(thumbnail, safe="/")
         else:
-            thumbnail_url = thumbnail or f"{SITE_URL}{CONFIG['site']['default_og_image']}"
+            thumbnail_url = thumbnail or f"{SITE_URL_TECHNICAL}{CONFIG['site']['default_og_image']}"
 
         article_schema = f"""
 <script type="application/ld+json">
@@ -786,19 +821,19 @@ def build_post_pages():
   "author": {{
     "@type": "Organization",
     "name": "{BIZ['name']}",
-    "url": "{SITE_URL}"
+    "url": "{SITE_URL_TECHNICAL}"
   }},
   "publisher": {{
     "@type": "Organization",
     "name": "{BIZ['name']}",
     "logo": {{
       "@type": "ImageObject",
-      "url": "{SITE_URL}{CONFIG['site']['default_og_image']}"
+      "url": "{SITE_URL_TECHNICAL}{CONFIG['site']['default_og_image']}"
     }}
   }},
   "mainEntityOfPage": {{
     "@type": "WebPage",
-    "@id": "{SITE_URL}/post/{p['slug']}/"
+    "@id": "{SITE_URL_TECHNICAL}/post/{p['slug']}/"
   }}
 }}
 </script>
@@ -962,7 +997,7 @@ def build_sitemap():
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for u in urls:
-        xml += f"  <url>\n    <loc>{SITE_URL}{u}</loc>\n    <lastmod>{today}</lastmod>\n  </url>\n"
+        xml += f"  <url>\n    <loc>{SITE_URL_TECHNICAL}{u}</loc>\n    <lastmod>{today}</lastmod>\n  </url>\n"
     xml += "</urlset>\n"
     write_file(DIST_DIR / "sitemap.xml", xml)
     print(f"  ✓ sitemap.xml ({len(urls)}개 URL)")
@@ -978,7 +1013,7 @@ Allow: /
 User-agent: NaverBot
 Allow: /
 
-Sitemap: {SITE_URL}/sitemap.xml
+Sitemap: {SITE_URL_TECHNICAL}/sitemap.xml
 """
     write_file(DIST_DIR / "robots.txt", content)
     print("  ✓ robots.txt")
