@@ -1136,6 +1136,16 @@ def copy_assets():
         print(f"  ✓ assets/ 복사 완료 (이미지 {img_count}장, 기타 {other_count}개)")
 
 
+def copy_netlify_redirects():
+    """루트의 _redirects 파일을 dist/로 복사 (Netlify 리다이렉트 작동용)"""
+    redirects_src = ROOT / "_redirects"
+    if redirects_src.exists():
+        shutil.copy2(redirects_src, DIST_DIR / "_redirects")
+        print("  ✓ _redirects 복사 완료 (리다이렉트 설정)")
+    else:
+        print("  ⚠ _redirects 파일 없음 (리다이렉트 설정 안 됨)")
+
+
 # ============================================================
 # 메인 빌드
 # ============================================================
@@ -1157,6 +1167,7 @@ def main():
     build_reviews_index()
     build_sitemap()
     build_robots()
+    copy_netlify_redirects()
 
     print("=" * 50)
     print(f"  ✅ 빌드 완료 → {DIST_DIR}")
