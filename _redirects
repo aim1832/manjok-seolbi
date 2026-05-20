@@ -1,0 +1,3 @@
+# 옛 Netlify 도메인 → 새 한글 도메인 영구 리다이렉트 (301)
+# 모든 페이지를 1:1로 새 도메인의 같은 경로로 이동
+https://manjok-seolbi.netlify.app/* https://xn--lz2bu5fcxcu7k.com/:splat 301!
