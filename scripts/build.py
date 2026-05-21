@@ -794,8 +794,112 @@ def load_posts():
     return posts
 
 
+def find_related_posts_for_post(current_post, post_index, all_posts):
+    """후기 페이지 하단에 표시할 관련 후기를 찾기.
+
+    current_post 자신은 제외하고,
+    - same_region: 같은 지역의 다른 후기
+    - nearby: 인근 지역의 후기
+    """
+    current_slug = current_post["slug"]
+    region_text = current_post.get("region", "")
+
+    # 현재 후기의 지역(district slug) 찾기
+    name_to_slug = {}
+    for region_key, region_data in REGIONS.items():
+        for d in region_data["districts"]:
+            name_to_slug[d["name"]] = d["slug"]
+
+    current_districts = set()
+    for name, slug in name_to_slug.items():
+        if name in region_text:
+            current_districts.add(slug)
+
+    # 같은 지역의 다른 후기
+    same_region = []
+    seen = {current_slug}
+    for d_slug in current_districts:
+        for p in post_index["by_district"].get(d_slug, []):
+            if p["slug"] not in seen:
+                same_region.append(p)
+                seen.add(p["slug"])
+
+    # 인근 지역 후기
+    nearby = []
+    for d_slug in current_districts:
+        for nearby_slug in NEARBY_REGIONS.get(d_slug, []):
+            for p in post_index["by_district"].get(nearby_slug, []):
+                if p["slug"] not in seen:
+                    nearby.append(p)
+                    seen.add(p["slug"])
+
+    # 최신순 정렬
+    same_region.sort(key=lambda p: p.get("date", ""), reverse=True)
+    nearby.sort(key=lambda p: p.get("date", ""), reverse=True)
+
+    return {
+        "same_region": same_region[:3],
+        "nearby": nearby[:3],
+    }
+
+
+def render_related_posts_section(current_post, related):
+    """후기 페이지 하단의 관련 후기 카드 영역"""
+    same_region = related["same_region"]
+    nearby = related["nearby"]
+
+    if not same_region and not nearby:
+        return ""
+
+    region_text = current_post.get("region", "")
+
+    def card(p):
+        thumb = p.get("thumbnail", "")
+        thumb_style = f"style=\"background-image:url('{thumb}');\"" if thumb else ""
+        return f"""
+    <a href="/post/{p['slug']}/" class="review-card">
+      <div class="thumb" {thumb_style}></div>
+      <div class="body">
+        <span class="badge">{p.get('service_name', '')}</span>
+        <h4>{p['title']}</h4>
+        <p class="meta">📍 {p.get('region', '')} · {p.get('date', '')}</p>
+      </div>
+    </a>"""
+
+    html = '<section class="related-posts" style="background:#f5f7fa;padding:40px 20px;margin-top:40px;">'
+    html += '<div style="max-width:1100px;margin:0 auto;">'
+
+    if same_region:
+        html += f'<h2 class="section-title">이 지역의 다른 작업 후기</h2>'
+        html += '<p style="text-align:center;color:#666;margin-bottom:24px;">만족설비는 같은 지역에서 다양한 배관설비 작업을 수행하고 있습니다.</p>'
+        html += '<div class="reviews-grid">'
+        for p in same_region:
+            html += card(p)
+        html += "</div>"
+
+    if nearby:
+        html += f'<h2 class="section-title" style="margin-top:40px;">인근 지역 작업 후기</h2>'
+        html += '<p style="text-align:center;color:#666;margin-bottom:24px;">인근 지역에서도 동일한 품질로 빠르게 출장 가능합니다.</p>'
+        html += '<div class="reviews-grid">'
+        for p in nearby:
+            html += card(p)
+        html += "</div>"
+
+    # 전체 후기 보기 버튼
+    html += """
+<div style="text-align:center;margin-top:30px;">
+  <a href="/reviews/" style="display:inline-block;padding:14px 32px;background:#2d4a2b;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">
+    📋 전체 후기 보기 →
+  </a>
+</div>
+"""
+    html += "</div></section>"
+    return html
+
+
 def build_post_pages():
     posts = load_posts()
+    post_index = build_post_index(posts)
     for p in posts:
         title = f"{p['title']} | {BIZ['name']}"
         desc = p.get("description", p["title"])
@@ -859,6 +963,9 @@ def build_post_pages():
 """
         html += cta_box_html()
         html += "</article>"
+        # 관련 후기 섹션 (같은 지역 / 인근 지역)
+        related = find_related_posts_for_post(p, post_index, posts)
+        html += render_related_posts_section(p, related)
         html += footer_html()
         write_file(DIST_DIR / "post" / p["slug"] / "index.html", html)
     print(f"  ✓ 후기 페이지 {len(posts)}개 생성")
