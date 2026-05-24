@@ -167,7 +167,7 @@ def head_html(title, description, canonical_path, og_image=None):
   "telephone": "{BIZ['phone']}",
   "url": "{SITE_URL_TECHNICAL}",
   "description": "{BIZ['description']}",
-  "areaServed": ["김해", "창원"],
+  "areaServed": ["김해", "창원", "부산"],
   "openingHours": "Mo-Su 00:00-23:59",
   "priceRange": "₩₩"
 }}
@@ -216,7 +216,7 @@ def footer_html():
 <footer class="footer">
   <div class="footer-info">
     <strong>{BIZ['name']}</strong>
-    <p>김해·창원 전지역 배관설비 출장 서비스</p>
+    <p>경남·부산 전지역 배관설비 출장 서비스</p>
     <p>📞 {BIZ['phone_display']} (연중무휴 24시간 상담)</p>
   </div>
   <div class="footer-bottom">
@@ -233,7 +233,7 @@ def cta_box_html(text="작업 상담은 전화 한 통이면 끝!"):
     return f"""
 <div class="cta-box">
   <h3>지금 막힘·누수로 곤란하신가요?</h3>
-  <p>{text} 김해·창원 전지역 빠른 출장 가능합니다.</p>
+  <p>{text} 경남·부산 전지역 빠른 출장 가능합니다.</p>
   <div class="cta-buttons">
     <a href="tel:{BIZ['phone_tel']}" class="btn btn-cta-call">📞 {BIZ['phone_display']}</a>
     <a href="{BIZ['kakao_url']}" target="_blank" class="btn btn-cta-kakao">💬 카톡으로 상담받기</a>
@@ -308,7 +308,7 @@ def service_icon_svg(slug):
 # 1. 메인 페이지 생성
 # ============================================================
 def build_index():
-    title = f"{BIZ['name']} | 김해·창원 배관설비 24시간 출장"
+    title = f"{BIZ['name']} | 경남·부산 배관설비 24시간 출장"
     desc = BIZ["description"]
     html = head_html(title, desc, "/")
     html += header_html()
@@ -369,7 +369,7 @@ def build_index():
       <div class="feature-item">
         <div class="feature-num">1</div>
         <h4>당일 즉시 출동</h4>
-        <p>전화 한 통이면 김해·창원 어디든 빠르게 출장 갑니다.</p>
+        <p>전화 한 통이면 경남·부산 어디든 빠르게 출장 갑니다.</p>
       </div>
       <div class="feature-item">
         <div class="feature-num">2</div>
@@ -394,7 +394,7 @@ def build_index():
     # 작업 가능 지역
     html += '<section class="regions-block container">'
     html += '<h2 class="section-title">작업 가능 지역</h2>'
-    html += '<p class="section-subtitle">김해·창원 전지역, 클릭 시 해당 지역 안내 페이지로 이동합니다</p>'
+    html += '<p class="section-subtitle">경남·부산 전지역, 클릭 시 해당 지역 안내 페이지로 이동합니다</p>'
     for region_key, region_data in REGIONS.items():
         html += f'<div class="region-group"><h3>{region_data["name"]}</h3><div class="region-tags">'
         for d in region_data["districts"]:
@@ -719,7 +719,7 @@ def build_region_service_pages():
 
 <article class="post-content">
   <h2>{d['name']} 지역 {s['name']} 작업, 만족설비에 맡겨주세요</h2>
-  <p>안녕하세요, 김해·창원 배관설비 전문업체 <strong>{BIZ['name']}</strong>입니다.
+  <p>안녕하세요, 경남·부산 배관설비 전문업체 <strong>{BIZ['name']}</strong>입니다.
   {city_name} {d['name']} 일대에서 {s['name']} 작업이 필요하신 고객님께 빠르고 정확한 시공으로 보답드리고 있습니다.</p>
 
   <p>{s['description']}</p>
@@ -997,7 +997,7 @@ def build_reviews_index():
             path = f"/reviews/page/{page_num}/"
             title = f"작업 후기 ({page_num}페이지) | {BIZ['name']}"
 
-        desc = f"김해·창원 만족설비의 실제 작업 후기 모음. 하수구 막힘, 수전·변기·세면대 교체 등 다양한 시공 사례를 확인하세요."
+        desc = f"경남·부산 만족설비의 실제 작업 후기 모음. 하수구 막힘, 수전·변기·세면대 교체 등 다양한 시공 사례를 확인하세요."
 
         html = head_html(title, desc, path)
         html += header_html()
@@ -1007,13 +1007,13 @@ def build_reviews_index():
 <section class="post-header">
   <h1>📋 만족설비 전체 작업 후기</h1>
   <div class="post-meta">
-    <span>📍 김해·창원 지역</span>
+    <span>📍 경남·부산 지역</span>
     <span>📝 총 {len(posts)}건의 후기</span>
   </div>
 </section>
 
 <article class="post-content">
-  <p>안녕하세요, 김해·창원 배관설비 전문 <strong>{BIZ['name']}</strong>입니다.
+  <p>안녕하세요, 경남·부산 배관설비 전문 <strong>{BIZ['name']}</strong>입니다.
   실제 작업 후기들을 한눈에 보실 수 있도록 정리했습니다.
   각 후기를 클릭하시면 시공 과정과 사진을 자세히 확인하실 수 있어요.</p>
 </article>
