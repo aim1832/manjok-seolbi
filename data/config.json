@@ -504,211 +504,192 @@
         }
       ]
     },
-    "busan": {
-      "name": "부산",
+    "busan_gangseo": {
+      "name": "부산 강서구",
       "districts": [
         {
           "slug": "gadokdo",
           "name": "가덕도",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "gangdong",
           "name": "강동동",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "gurang",
           "name": "구랑",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "noksan",
           "name": "녹산",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "daejeo",
           "name": "대저",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "myeongji",
           "name": "명지",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "mieum",
           "name": "미음",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "beombang",
           "name": "범방동",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "saenggok",
           "name": "생곡",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "songjong",
           "name": "송정동",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "sinho",
           "name": "신호동",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "jisa",
           "name": "지사동",
-          "gu": "강서구",
           "tier": 1
         },
         {
           "slug": "hwajeon",
           "name": "화전",
-          "gu": "강서구",
           "tier": 1
-        },
+        }
+      ]
+    },
+    "busan_saha": {
+      "name": "부산 사하구",
+      "districts": [
         {
           "slug": "gamcheon",
           "name": "감천동",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "goejeong",
           "name": "괴정",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "gupyeong",
           "name": "구평",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "dadae",
           "name": "다대동",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "dangni",
           "name": "당리",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "sinpyeong",
           "name": "신평",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "jangnim",
           "name": "장림",
-          "gu": "사하구",
           "tier": 1
         },
         {
           "slug": "hadan",
           "name": "하단",
-          "gu": "사하구",
           "tier": 1
-        },
+        }
+      ]
+    },
+    "busan_buk": {
+      "name": "부산 북구",
+      "districts": [
         {
           "slug": "gupo",
           "name": "구포",
-          "gu": "북구",
           "tier": 1
         },
         {
           "slug": "geumgok",
           "name": "금곡동",
-          "gu": "북구",
           "tier": 1
         },
         {
           "slug": "deokcheon",
           "name": "덕천",
-          "gu": "북구",
           "tier": 1
         },
         {
           "slug": "mandeok",
           "name": "만덕",
-          "gu": "북구",
           "tier": 1
         },
         {
           "slug": "hwamyeong",
           "name": "화명동",
-          "gu": "북구",
           "tier": 1
-        },
+        }
+      ]
+    },
+    "busan_sasang": {
+      "name": "부산 사상구",
+      "districts": [
         {
           "slug": "gamjeon",
           "name": "감전동",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "gwaebop",
           "name": "괘법동",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "deokpo",
           "name": "덕포동",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "mora",
           "name": "모라",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "samlak",
           "name": "삼락동",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "eomgung",
           "name": "엄궁",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "jurye",
           "name": "주례",
-          "gu": "사상구",
           "tier": 1
         },
         {
           "slug": "hakjang",
           "name": "학장동",
-          "gu": "사상구",
           "tier": 1
         }
       ]
